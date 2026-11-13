@@ -3,6 +3,8 @@
 // into ./dist-static (see README → Deployment) and served from env.ASSETS.
 
 const MAX_SCORE = 600;
+// Every real total is a sum of three rounds paying 150, or 200 for a quick answer.
+const ALLOWED_SCORES = new Set([0, 150, 200, 300, 350, 400, 450, 500, 550, 600]);
 const MAX_NAME = 16;
 const TOP_COUNT = 10;
 const MODES = new Set(["find", "roast"]);
@@ -98,6 +100,19 @@ async function leaderboard(request, env) {
     return json({ entries: await topScores(env, mode) });
   }
 
+  // Moderation: remove every entry under a name, for spam and for the owner's own tests.
+  if (request.method === "DELETE") {
+    const token = request.headers.get("x-board-token") ?? "";
+    if (!env.BOARD_TOKEN || token !== env.BOARD_TOKEN) {
+      return json({ error: "Not allowed" }, 401);
+    }
+    const name = cleanName(new URL(request.url).searchParams.get("name") ?? "");
+    if (!name) return json({ error: "Name required" }, 400);
+    await ensureSchema(env);
+    const result = await env.DB.prepare(`DELETE FROM scores WHERE name = ?1`).bind(name).run();
+    return json({ deleted: result.meta?.changes ?? 0 });
+  }
+
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
   }
@@ -117,9 +132,8 @@ async function leaderboard(request, env) {
   const mode = typeof body?.mode === "string" ? body.mode : "find";
   if (!MODES.has(mode)) return json({ error: "Unknown mode" }, 400);
 
-  // Rounds pay 150, or 200 for a quick answer, so every real total is a multiple of 50.
   const score = Number(body?.score);
-  if (!Number.isInteger(score) || score < 0 || score > MAX_SCORE || score % 50 !== 0) {
+  if (!Number.isInteger(score) || !ALLOWED_SCORES.has(score) || score > MAX_SCORE) {
     return json({ error: "That score is not a real round" }, 400);
   }
 
