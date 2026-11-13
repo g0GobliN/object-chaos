@@ -79,6 +79,23 @@ Measured on a Windows 11 desktop, Chromium 130 (Electron), 16 logical cores, 8 G
 | Desk, 768 px (in browser, dev build) | 7 | 0 | 4.0–4.5 s |
 | Desk, 768 px (in browser, static build) | 7 | 0 | 4.6 s |
 
+### 20-photo sweep
+
+Run through the same Node harness at 768 px, on Wikimedia Commons photographs plus the four originals (kitchen, bedroom, bookshelf, supermarket shelves, laptop desk, street scene, flower garden, garage bench, bathroom, classroom, tool workshop, wardrobe, picnic, cafe painting, living room, parked bicycle, desk, bus, portrait, dog):
+
+- **174 objects** across 20 photos — average 8.7, minimum 3, maximum 17. No photo returned zero objects, so every one of them was playable.
+- **59 OCR text lines**, concentrated in the supermarket (29) and bus (6) shots.
+- **Latency:** average 2.32 s, median 2.40 s, min 1.75 s, max 3.21 s.
+- Every bounding-box coordinate across all 20 outputs fell inside 0–1000, which is the evidence for the fixed coordinate grid described above.
+
+Accuracy is real but modest, and the failures are worth knowing before anyone calls this a detector:
+
+- A garage workbench was read as kitchen fixtures ("range hood", "stove", "stainless steel sink").
+- A wall of hand tools came back as "grass", "metal ring" and "wooden stick".
+- A dog was labelled "cat" (0.80).
+- A classroom produced eleven separate "chair" boxes — correct, but duplicate-happy.
+- A watermarked stock photo produced an object called "watermark".
+
 Weights: 21.6 MB (`mirage.cact`), cached in Cache Storage. Runtime: 99 KB JS + 1.2 MB WASM, served from the site. App JS: ~350 KB (≈90 KB gzipped) plus fonts. Total first visit ≈ 2.2 MB of app + 21.6 MB of model; every later visit reuses the cached model.
 
 Peak JS heap after a round was ~7 MB; the model lives in the WASM heap, which the browser does not expose to `performance.memory`, so total runtime memory is not measured precisely here.
@@ -94,7 +111,7 @@ Verified by hand on the deployed URL and locally:
 
 Known limitations:
 
-- **Accuracy is modest.** On the sample desk Mirage finds keyboards, cups, a desk, a notebook and a mousepad correctly, but it returns duplicate boxes for the same object (merged by the adapter when they overlap), misses small items, and mislabels some things (a dog was labelled "cat"). Confidence is usually 0.3–0.75, so labels are shown honestly as percentages instead of being treated as ground truth.
+- **Accuracy is modest.** It labels the familiar well (desk, keyboard, mug, chair, bed, books, shelf, person) and insects the unfamiliar (tool walls become "grass", a garage becomes kitchen appliances, a dog becomes a cat). Duplicate boxes for the same object are common and are merged by the adapter when they overlap; small items are missed at 768 px. Confidence is usually 0.3–0.8, so labels are shown honestly as percentages instead of being treated as ground truth. The 20-photo sweep above is the actual evidence base — see "What works, and what does not".
 - **Challenges depend on the photo.** A scene with fewer than two objects cannot start a round; challenges are only drawn from attributes that exist (colour, material, position, size, category, OCR, duplicates), so variety scales with how much the model described.
 - **768 px downscale.** Faster and lighter, at the cost of small-object recall. Higher resolutions mostly add latency.
 - **First load needs the network** to fetch the model from Hugging Face (CORS is enabled there). After that it is cached; there is no offline-first app shell.
