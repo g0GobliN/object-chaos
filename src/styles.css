@@ -105,15 +105,21 @@
   font-weight: 700;
   white-space: nowrap;
 }
-.logo > svg {
-  width: 31px;
-  height: 31px;
-  color: var(--primary);
-  stroke-width: 2.5;
+.logo img {
+  display: block;
+  height: 40px;
+  width: auto;
+  border-radius: 9px;
 }
-.logo > span {
-  display: flex;
-  gap: 4px;
+.site-footer .logo img {
+  height: 48px;
+}
+.hero-logo {
+  display: block;
+  width: auto;
+  height: clamp(64px, 9vw, 96px);
+  border-radius: 16px;
+  margin-bottom: 20px;
 }
 .main-nav {
   display: flex;

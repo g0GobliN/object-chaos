@@ -24,6 +24,15 @@ export const Route = createFileRoute("/result")({
   component: Result,
 });
 
+function loadLogo() {
+  return new Promise<HTMLImageElement | null>((resolve) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = "/brand/logo.webp";
+  });
+}
+
 function Result() {
   const { mode = "roast", score } = Route.useSearch();
   const [stored, setStored] = useState<StoredResult | null>(null);
@@ -69,7 +78,7 @@ function Result() {
     }
   }
 
-  function download() {
+  async function download() {
     const canvas = document.createElement("canvas");
     canvas.width = 1080;
     canvas.height = 1080;
@@ -84,9 +93,12 @@ function Result() {
 
     context.fillStyle = color("--background", "#141416");
     context.fillRect(0, 0, 1080, 1080);
-    context.fillStyle = color("--primary", "#b18cff");
-    context.font = "bold 30px sans-serif";
-    context.fillText("OBJECT CHAOS REPORT", 70, 100);
+    const logo = await loadLogo();
+    if (logo) {
+      const logoWidth = 200;
+      const logoHeight = Math.round((logo.naturalHeight / logo.naturalWidth) * logoWidth);
+      context.drawImage(logo, 60, 38, logoWidth, logoHeight);
+    }
 
     context.fillStyle = color("--foreground", "#f5f2ff");
     context.font = "bold 200px sans-serif";
@@ -165,7 +177,7 @@ function Result() {
           <Button size="hero" variant="outline" onClick={share}>
             <Share2 /> Share result
           </Button>
-          <Button size="hero" variant="ghost" onClick={download}>
+          <Button size="hero" variant="ghost" onClick={() => void download()}>
             <Download /> Download card
           </Button>
         </div>

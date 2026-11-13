@@ -20,7 +20,9 @@ export function pageHead(title: string, description: string) {
       { property: "og:title", content: `${title} — OBJECT CHAOS` },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "/brand/og.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "/brand/og.jpg" },
     ],
   };
 }

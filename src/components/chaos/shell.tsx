@@ -4,11 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 export function Logo() {
   return (
-    <Link to="/" className="logo">
-      <Asterisk aria-hidden="true" />
-      <span>
-        OBJECT<span className="text-primary">CHAOS</span>
-      </span>
+    <Link to="/" className="logo" aria-label="OBJECT CHAOS">
+      <img src="/brand/logo-header.webp" alt="OBJECT CHAOS" width={256} height={171} />
     </Link>
   );
 }

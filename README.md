@@ -126,6 +126,14 @@ Known limitations:
 
 Image data stays in the page: it is drawn to a canvas, passed as pixels to a Worker in the same origin, and never sent anywhere. The only network requests are the static assets, the fonts and the model download. Results live in `sessionStorage` for the result page and disappear when the tab closes.
 
+## Brand assets
+
+`logo/logo.png` is the source wordmark (1536×1024). Everything the site serves is derived from it in `public/brand/`: `logo.webp` (hero), `logo-header.webp` (header/footer), `icon-16/64/192/512`-style PNG icons, `og.jpg` (1200×630 social card), plus `public/favicon.ico` (64×64 PNG-in-ICO). Regenerate with ffmpeg, e.g.:
+
+```bash
+ffmpeg -i logo/logo.png -vf "scale=1024:-1:flags=lanczos" -c:v libwebp -quality 90 public/brand/logo.webp
+```
+
 ## Credits and licenses
 
 - **Mirage** model and **Cactus** WASM runtime — Cactus Compute, Apache-2.0. Runtime vendored in `public/cactus/`; license text in `LICENSE-APACHE-2.0.txt` and `THIRD_PARTY_NOTICES.md`.

@@ -20,6 +20,13 @@ function Index() {
       <main>
         <section className="hero page-width">
           <div className="hero-copy">
+            <img
+              className="hero-logo"
+              src="/brand/logo.webp"
+              alt="OBJECT CHAOS"
+              width={1024}
+              height={683}
+            />
             <p className="eyebrow">
               <span className="status-dot" /> THE INTERNET'S LITTLE CHAOS MACHINE
             </p>
