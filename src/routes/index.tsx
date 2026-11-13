@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ArrowUpRight, Sparkles, ShieldCheck, Asterisk } from "lucide-react";
-import { Header, Footer } from "@/components/chaos/shell";
+
 import { DeskViewer } from "@/components/chaos/desk-viewer";
-import { HowSection, GamesSection } from "@/components/chaos/landing-sections";
-import { Button } from "@/components/ui/button";
-import { SAMPLE_ANALYSIS, pageHead } from "@/lib/chaos";
+import { Footer, Header } from "@/components/chaos/shell";
+import { SAMPLE_ANALYSIS, SAMPLE_PHOTO, pageHead } from "@/lib/chaos";
+
 export const Route = createFileRoute("/")({
   head: () =>
     pageHead(
@@ -14,110 +13,68 @@ export const Route = createFileRoute("/")({
     ),
   component: Index,
 });
+
 function Index() {
   return (
     <>
       <Header />
-      <main>
-        <section className="hero page-width">
+      <main className="w-wrap">
+        <div className="hero">
           <div className="hero-copy">
-            <img
-              className="hero-logo"
-              src="/brand/logo.webp"
-              alt="OBJECT CHAOS"
-              width={1024}
-              height={683}
-            />
-            <p className="eyebrow">
-              <span className="status-dot" /> THE INTERNET'S LITTLE CHAOS MACHINE
-            </p>
             <h1>
-              Your world.
+              Your desk
               <br />
-              Your objects.
-              <br />
-              <span className="chaos-word">
-                Your chaos.
-                <Sparkles />
-              </span>
+              is the game.
             </h1>
-            <p className="hero-description">
-              Upload a photo. Let AI inspect your surroundings.
-              <br className="desktop-break" /> Discover what happens next.
+            <p className="w-lead">
+              Upload a photo. A small model reads it on your device, names what is lying around, and
+              the round starts from that list. Nothing is uploaded, nothing to sign in to.
             </p>
-            <div className="hero-actions">
-              <Button asChild size="hero">
-                <Link to="/play" search={{ mode: "find" }}>
-                  Start Creating Chaos <ArrowUpRight />
-                </Link>
-              </Button>
-              <Button asChild variant="ghost" size="hero">
-                <Link to="/how-it-works">
-                  See how it works <ArrowRight />
-                </Link>
-              </Button>
+            <div className="w-cta">
+              <Link to="/play" search={{ mode: "find" }} className="w-play w-play-lg">
+                start playing
+              </Link>
             </div>
-            <p className="hero-assurance">
-              <ShieldCheck size={13} /> No account needed <span>·</span> Free to play <span>·</span>{" "}
-              Your photos stay yours
+            <p className="w-small">
+              the sample desk is already loaded · free · works offline after the first scan
             </p>
           </div>
-          <div className="hero-image">
-            <div className="hero-image-note">
-              ordinary desk. extraordinary problems.<span>↘</span>
+
+          <div className="hero-photo">
+            <div className="w-photo">
+              <DeskViewer
+                image={SAMPLE_PHOTO}
+                objects={SAMPLE_ANALYSIS.objects}
+                inferenceMs={SAMPLE_ANALYSIS.inferenceMs}
+                caption="SAMPLE DESK"
+              />
             </div>
-            <DeskViewer
-              compact
-              objects={SAMPLE_ANALYSIS.objects}
-              inferenceMs={SAMPLE_ANALYSIS.inferenceMs}
-              caption="EXAMPLE ANALYSIS · SAMPLE DESK"
-            />
-            <div className="floating-found">
-              <ScanIcon /> {SAMPLE_ANALYSIS.objects.length} OBJECTS FOUND
-            </div>
-            <div className="floating-chaos">
-              <Asterisk size={16} /> CHAOS LEVEL: HIGH
-            </div>
-            <div className="hero-image-foot">
-              <span>REAL LIFE, REMIXED.</span>
-              <span>01 — 03</span>
-            </div>
-          </div>
-        </section>
-        <div className="ticker">
-          <div>
-            <span>ORDINARY OBJECTS</span>
-            <Asterisk />
-            <span>EXTRAORDINARY NONSENSE</span>
-            <Asterisk />
-            <span>ZERO SOCIAL SKILLS REQUIRED</span>
-            <Asterisk />
-            <span>100% YOUR KIND OF WEIRD</span>
-            <Asterisk />
+            <p className="w-script">
+              {SAMPLE_ANALYSIS.objects.length} real detections, found in{" "}
+              {Math.round(SAMPLE_ANALYSIS.inferenceMs)} ms on a messy desk
+            </p>
           </div>
         </div>
-        <HowSection />
-        <GamesSection />
-        <section className="final-cta page-width">
-          <Asterisk />
-          <p className="eyebrow">YOUR CAMERA ROLL HAS POTENTIAL.</p>
-          <h2>
-            A little mess.
-            <br />
-            <span className="text-primary">A lot of possibilities.</span>
-          </h2>
-          <Button asChild size="hero">
-            <Link to="/play" search={{ mode: "find" }}>
-              Let's make some chaos <ArrowUpRight />
-            </Link>
-          </Button>
-          <p>No downloads. No sign-ups. Just a good time.</p>
-        </section>
+
+        <div className="hero-strip">
+          <Link to="/play" search={{ mode: "find" }} className="hero-tile">
+            <span className="hero-tile-num">Play</span>
+            <span className="hero-tile-title">Find the object</span>
+            <p>Three challenges, twenty seconds each. Tap the right thing on the photo, 300 max.</p>
+          </Link>
+          <Link to="/play" search={{ mode: "roast" }} className="hero-tile">
+            <span className="hero-tile-num">Play</span>
+            <span className="hero-tile-title">Object roast</span>
+            <p>One verdict per photo, scored out of 100, built only from what the model found.</p>
+          </Link>
+          <Link to="/how-it-works" className="hero-tile">
+            <span className="hero-tile-num">Read</span>
+            <span className="hero-tile-title">How it works</span>
+            <p>Where the photo goes (nowhere), what the model does, and what it gets wrong.</p>
+          </Link>
+        </div>
       </main>
       <Footer />
     </>
   );
-}
-function ScanIcon() {
-  return <span className="badge-scan">⌖</span>;
 }

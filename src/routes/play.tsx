@@ -1,22 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Camera,
-  Check,
-  CircleAlert,
-  Clock,
-  Crosshair,
-  Flame,
-  RotateCcw,
-  Sparkles,
-  Trophy,
-  Upload,
-  X,
-} from "lucide-react";
+import { Camera, Check, CircleAlert, Eye, RotateCcw, Sparkles, Upload, X } from "lucide-react";
 
-import { Header, Footer } from "@/components/chaos/shell";
 import { DeskViewer } from "@/components/chaos/desk-viewer";
-import { Button } from "@/components/ui/button";
+import { Footer, Header } from "@/components/chaos/shell";
 import { SAMPLE_ANALYSIS, SAMPLE_PHOTO, pageHead } from "@/lib/chaos";
 import { describePixels, localInferenceSupported, type MirageProgress } from "@/lib/mirage/client";
 import { adaptMirage, type Analysis } from "@/lib/mirage/adapter";
@@ -39,6 +26,8 @@ export const Route = createFileRoute("/play")({
 
 const MAX_EDGE = 768;
 const MAX_BYTES = 15 * 1024 * 1024;
+const MIN_IMAGE_EDGE = 64;
+const MAX_IMAGE_EDGE = 12000;
 const ROUND_SECONDS = 20;
 
 type Stage = "idle" | "analyzing" | "ready";
@@ -70,7 +59,8 @@ function Play() {
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState<string | undefined>();
-  const [feedback, setFeedback] = useState<"correct" | "incorrect" | undefined>();
+  const [tapped, setTapped] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<"correct" | "incorrect" | "skipped" | undefined>();
   const [seconds, setSeconds] = useState(ROUND_SECONDS);
   const [roastData, setRoastData] = useState<Roast | null>(null);
 
@@ -81,6 +71,9 @@ function Play() {
 
   const challenge = challenges[round];
   const complete = challenges.length > 0 && round >= challenges.length;
+  const answerNames = (challenge?.answerIds ?? [])
+    .map((id) => analysis?.objects.find((object) => object.id === id)?.name)
+    .filter((name): name is string => Boolean(name));
   const busy = stage === "analyzing";
 
   const stopCamera = useCallback(() => {
@@ -102,7 +95,7 @@ function Play() {
 
   useEffect(() => {
     if (mode !== "find" || stage !== "ready" || complete) return;
-    if (seconds <= 0 || feedback === "correct") return;
+    if (seconds <= 0 || feedback) return;
     const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
     return () => clearInterval(timer);
   }, [mode, stage, complete, seconds, feedback]);
@@ -113,6 +106,21 @@ function Play() {
   }, [mode, stage, complete, seconds, feedback]);
 
   const analyse = useCallback(async (bitmap: ImageBitmap) => {
+    // close() detaches the bitmap and zeroes its size, so read the dimensions first.
+    const pixelsWide = bitmap.width;
+    const pixelsHigh = bitmap.height;
+    if (pixelsWide < MIN_IMAGE_EDGE || pixelsHigh < MIN_IMAGE_EDGE) {
+      bitmap.close();
+      throw new Error(
+        `That image is ${pixelsWide}×${pixelsHigh} pixels. Use one at least ${MIN_IMAGE_EDGE} px on both sides.`,
+      );
+    }
+    if (pixelsWide > MAX_IMAGE_EDGE || pixelsHigh > MAX_IMAGE_EDGE) {
+      bitmap.close();
+      throw new Error(
+        `That image is ${pixelsWide}×${pixelsHigh} pixels. The limit is ${MAX_IMAGE_EDGE} px on the longest side.`,
+      );
+    }
     const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -197,6 +205,12 @@ function Play() {
     [run, stopCamera],
   );
 
+  const loadSample = useCallback(async () => {
+    const response = await fetch(SAMPLE_PHOTO);
+    if (!response.ok) throw new Error("The sample photo could not be loaded. Try uploading one.");
+    return createImageBitmap(await response.blob());
+  }, []);
+
   const startCamera = useCallback(async () => {
     setError("");
     try {
@@ -229,11 +243,17 @@ function Play() {
       if (!challenge || feedback === "correct" || seconds === 0) return;
       const correct = challenge.answerIds.includes(id);
       setSelected(id);
+      setTapped(analysis?.objects.find((object) => object.id === id)?.name ?? null);
       setFeedback(correct ? "correct" : "incorrect");
       if (correct) setScore((value) => value + 100);
     },
-    [challenge, feedback, seconds],
+    [analysis, challenge, feedback, seconds],
   );
+
+  const skip = useCallback(() => {
+    if (!challenge || feedback) return;
+    setFeedback("skipped");
+  }, [challenge, feedback]);
 
   const next = useCallback(() => {
     setFeedback(undefined);
@@ -249,6 +269,7 @@ function Play() {
     setChallenges([]);
     setRoastData(null);
     setSelected(undefined);
+    setTapped(null);
     setFeedback(undefined);
     setError("");
     setRound(0);
@@ -270,49 +291,44 @@ function Play() {
       textLines: analysis.textLines,
       inferenceMs: Math.round(analysis.inferenceMs),
       image,
+      selected: tapped,
     });
     void navigate({ to: "/result", search: { mode, score: finalScore } });
-  }, [analysis, mode, navigate, roastData, score, image]);
+  }, [analysis, mode, navigate, roastData, score, image, tapped]);
 
   const shownAnalysis = stage === "ready" && analysis ? analysis : SAMPLE_ANALYSIS;
 
   return (
     <>
-      <Header game />
-      <main className="play-page page-width">
-        <div className="play-heading">
-          <div>
-            <p className="eyebrow">
-              <span className="status-dot" /> THE CHAOS LAB · LOCAL AI
-            </p>
-            <h1>Let&apos;s make a little chaos.</h1>
-          </div>
-          <div className="mode-switch">
-            <Button asChild variant={mode === "find" ? "default" : "ghost"}>
-              <Link to="/play" search={{ mode: "find" }}>
-                <Crosshair /> Find the object
-              </Link>
-            </Button>
-            <Button asChild variant={mode === "roast" ? "orange" : "ghost"}>
-              <Link to="/play" search={{ mode: "roast" }}>
-                <Flame /> Object roast
-              </Link>
-            </Button>
-          </div>
+      <Header />
+      <main className="w-wrap">
+        <div className="g-head">
+          <h1>{mode === "find" ? "Find the object" : "Object roast"}</h1>
+          <p className="g-modes">
+            <Link to="/play" search={{ mode: "find" }}>
+              {mode === "find" ? <strong>Find</strong> : "Find"}
+            </Link>
+            <Link to="/play" search={{ mode: "roast" }}>
+              {mode === "roast" ? <strong>Roast</strong> : "Roast"}
+            </Link>
+          </p>
         </div>
 
-        <div className="play-grid">
-          <section>
+        <div className="g-layout">
+          <div className="g-stage">
             {cameraOn ? (
               <div className="camera-stage">
                 <video ref={videoRef} playsInline muted className="camera-video" />
-                <div className="camera-actions">
-                  <Button size="hero" onClick={capture}>
-                    <Camera /> Capture
-                  </Button>
-                  <Button variant="ghost" size="hero" onClick={stopCamera}>
-                    Cancel
-                  </Button>
+                <div className="g-attract">
+                  <p className="g-attract-title">Hold still</p>
+                  <div className="g-attract-actions">
+                    <button type="button" className="w-play" onClick={capture}>
+                      <Camera size={14} /> take the photo
+                    </button>
+                    <button type="button" className="w-linkish" onClick={stopCamera}>
+                      cancel
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -333,227 +349,262 @@ function Play() {
               />
             )}
 
-            {busy ? (
-              <div className="analysis-progress" role="status" aria-live="polite">
-                <div>
-                  <span className="status-dot" /> {progressCopy(progress)}
-                  {progressPercent(progress) !== null ? (
-                    <strong>{progressPercent(progress)}%</strong>
-                  ) : null}
+            {!cameraOn && !busy && stage !== "ready" ? (
+              <div className="g-attract">
+                <p className="g-attract-title">{mode === "find" ? "Press start" : "Get roasted"}</p>
+                <p className="g-attract-note">
+                  {mode === "find"
+                    ? "3 rounds · 20 seconds each · 300 max"
+                    : "1 verdict · scored out of 100"}
+                </p>
+                <div className="g-attract-actions">
+                  <button
+                    type="button"
+                    className="w-play w-play-lg"
+                    onClick={() => void run(loadSample())}
+                  >
+                    use the sample desk
+                  </button>
+                  <button
+                    type="button"
+                    className="w-linkish"
+                    onClick={() => inputRef.current?.click()}
+                  >
+                    or upload a photo
+                  </button>
                 </div>
-                <div className="progress-track">
+              </div>
+            ) : null}
+
+            {busy ? (
+              <div className="g-attract">
+                <p className="g-attract-title">Scanning</p>
+                <div className="w-progress">
                   <span style={{ width: `${progressPercent(progress) ?? 100}%` }} />
                 </div>
-                <p>Everything runs on this device. The photo is never uploaded.</p>
-              </div>
-            ) : null}
-
-            {error ? (
-              <p className="play-error" role="alert">
-                <CircleAlert size={15} /> {error}
-              </p>
-            ) : null}
-
-            <div className="upload-row">
-              <div>
-                <strong>
-                  {stage === "ready"
-                    ? "Your photo, analysed on this device."
-                    : "A perfectly questionable desk."}
-                </strong>
-                <p>
-                  {stage === "ready"
-                    ? `Mirage found ${analysis?.objects.length ?? 0} objects in ${
-                        Math.round((analysis?.inferenceMs ?? 0) / 100) / 10
-                      }s.`
-                    : "Upload one, use your camera, or try the sample."}
+                <p className="g-attract-note">
+                  {progressCopy(progress)}
+                  {progressPercent(progress) !== null ? ` · ${progressPercent(progress)}%` : ""}
                 </p>
               </div>
-              <div className="upload-actions">
-                <Button variant="outline" onClick={() => inputRef.current?.click()} disabled={busy}>
-                  <Upload /> Upload photo
-                </Button>
-                <Button variant="ghost" onClick={startCamera} disabled={busy || cameraOn}>
-                  <Camera /> Camera
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    stopCamera();
-                    void run(loadSample());
-                  }}
-                  disabled={busy}
-                >
-                  <Sparkles /> Try the sample
-                </Button>
-              </div>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={(event) => {
-                  onFile(event.target.files?.[0]);
-                  event.target.value = "";
-                }}
-              />
-            </div>
-
-            <div className="demo-note">
-              <Sparkles size={15} />
-              <span>
-                Mirage is a 22 MB vision model that runs in WebAssembly on your device. The first
-                run downloads it once; after that it is cached. No upload, no API key, no inference
-                bill.
-              </span>
-            </div>
-          </section>
-
-          <aside className="game-panel">
-            {stage === "idle" ? (
-              <>
-                <div className="panel-eyebrow">
-                  <Sparkles size={16} />
-                  <span>READY WHEN YOU ARE</span>
-                </div>
-                <h2 className="roast-title">Point it at your desk.</h2>
-                <p className="observations">
-                  Mirage looks at the photo, finds the objects, and hands the list to the game. Find
-                  them, or let your surroundings say something rude about you.
-                </p>
-                <Button size="hero" onClick={() => inputRef.current?.click()}>
-                  <Upload /> Start creating chaos
-                </Button>
-              </>
             ) : null}
+          </div>
 
-            {busy ? (
-              <div className="panel-loading">
-                <span className="status-dot" />
-                <p>{progressCopy(progress)}</p>
-                <small>First run includes a one-time 21.6 MB model download.</small>
-              </div>
-            ) : null}
-
+          <aside className="g-side">
             {stage === "ready" && mode === "find" ? (
-              <>
-                <div className="panel-eyebrow">
-                  <Crosshair size={16} />
-                  <span>FIND THE OBJECT</span>
-                  <span>
-                    {Math.min(round + 1, challenges.length)} / {challenges.length || 0}
-                  </span>
-                </div>
-                <div className="game-stats">
-                  <div>
-                    <Clock size={16} />
-                    <span className={seconds < 10 ? "text-chaos-orange" : ""}>
-                      00:{String(seconds).padStart(2, "0")}
-                    </span>
-                    <small>TIME LEFT</small>
+              challenges.length === 0 ? (
+                <>
+                  <p className="g-challenge">Not enough to play with</p>
+                  <p className="w-small">
+                    Mirage found {analysis?.objects.length ?? 0} usable objects. Find the object
+                    needs at least two, so there is something to get wrong.
+                  </p>
+                  <div className="w-actions">
+                    <button type="button" className="w-play" onClick={reset}>
+                      try another photo
+                    </button>
                   </div>
-                  <div>
-                    <Trophy size={16} />
-                    <span>{score}</span>
-                    <small>POINTS</small>
+                </>
+              ) : complete ? (
+                <>
+                  <div className="g-hud">
+                    <div>
+                      <span className="g-label">Score</span>
+                      <span className="g-num">{score}</span>
+                    </div>
+                    <div>
+                      <span className="g-label">Out of</span>
+                      <span className="g-num">{challenges.length * 100}</span>
+                    </div>
+                    <div>
+                      <span className="g-label">Rounds</span>
+                      <span className="g-num">{challenges.length}</span>
+                    </div>
                   </div>
-                </div>
+                  <p className="g-challenge">Round complete</p>
+                  <div className="w-actions">
+                    <button type="button" className="w-play w-play-lg" onClick={finish}>
+                      see my report
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="g-hud">
+                    <div>
+                      <span className="g-label">Round</span>
+                      <span className="g-num">
+                        {Math.min(round + 1, challenges.length)}/{challenges.length}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="g-label">Time</span>
+                      <span className={`g-num${seconds < 10 ? " is-low" : ""}`}>
+                        00:{String(seconds).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="g-label">Score</span>
+                      <span className="g-num">{score}</span>
+                    </div>
+                  </div>
 
-                {challenges.length === 0 ? (
-                  <>
-                    <h2 className="roast-title">Not enough to play with.</h2>
-                    <p className="observations">
-                      Mirage found {analysis?.objects.length ?? 0} usable objects. Find the object
-                      needs at least two so there is something to get wrong. Try a richer photo.
+                  <p className="g-challenge">{challenge?.text}</p>
+                  <div className="g-pips" aria-hidden="true">
+                    {challenges.map((item, index) => (
+                      <span
+                        key={item.id}
+                        className={index < round ? "is-done" : index === round ? "is-now" : ""}
+                      />
+                    ))}
+                  </div>
+                  <p className="g-hint">tap it on the photo, not down here</p>
+
+                  {feedback ? (
+                    <p className={`w-feedback${feedback === "incorrect" ? " bad" : ""}`}>
+                      {feedback === "correct" ? <Check size={13} /> : null}
+                      {feedback === "incorrect" ? <X size={13} /> : null}
+                      {feedback === "skipped" ? <Eye size={13} /> : null}{" "}
+                      {feedback === "correct"
+                        ? "+100. Sharp eyes."
+                        : feedback === "incorrect"
+                          ? "Not that one. Keep looking?"
+                          : `Skipped, no points. Mirage counted: ${answerNames.join(", ") || "nothing certain"}.`}
                     </p>
-                    <Button variant="outline" size="hero" onClick={reset}>
-                      <RotateCcw /> Try another photo
-                    </Button>
-                  </>
-                ) : complete ? (
-                  <>
-                    <h2 className="roast-title">Chaos, conquered.</h2>
-                    <p className="observations">
-                      You scored {score} of {challenges.length * 100} across {challenges.length}{" "}
-                      rounds.
-                    </p>
-                    <Button size="hero" onClick={finish}>
-                      See my report
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="challenge-section">
-                      <span className="tiny">YOUR CHALLENGE</span>
-                      <h2>{challenge?.text}</h2>
-                      <p>Tap the object in the photo.</p>
-                    </div>
-                    <div className="round-progress">
-                      {challenges.map((item, index) => (
-                        <span key={item.id} className={index < round ? "done" : ""} />
-                      ))}
-                    </div>
-                    {feedback ? (
-                      <p className={`feedback ${feedback}`}>
-                        {feedback === "correct" ? <Check /> : <X />}
-                        {feedback === "correct"
-                          ? "+100. Sharp eyes."
-                          : "Not that one. Keep looking?"}
-                      </p>
-                    ) : null}
-                    {feedback ? (
-                      <Button variant="outline" size="hero" onClick={next}>
-                        {round + 1 >= challenges.length ? "Finish round" : "Next challenge"}
-                      </Button>
-                    ) : null}
-                  </>
-                )}
-              </>
+                  ) : null}
+
+                  <div className="w-actions">
+                    {!feedback ? (
+                      <button type="button" className="w-linkish" onClick={skip}>
+                        show me what counts
+                      </button>
+                    ) : (
+                      <button type="button" className="w-play" onClick={next}>
+                        {round + 1 >= challenges.length ? "finish round" : "next challenge"}
+                      </button>
+                    )}
+                    <span className="w-small">+100 per correct tap</span>
+                  </div>
+                </>
+              )
             ) : null}
 
             {stage === "ready" && mode === "roast" ? (
               <>
-                <div className="panel-eyebrow">
-                  <Flame size={16} />
-                  <span>OBJECT ROAST</span>
-                  <span>{roastData?.score ?? 0} / 100</span>
+                <div className="g-hud">
+                  <div>
+                    <span className="g-label">Verdict</span>
+                    <span className="g-num">{roastData?.score ?? 0}/100</span>
+                  </div>
+                  <div>
+                    <span className="g-label">Objects</span>
+                    <span className="g-num">{analysis?.objects.length ?? 0}</span>
+                  </div>
+                  <div>
+                    <span className="g-label">Scan</span>
+                    <span className="g-num">
+                      {Math.round((analysis?.inferenceMs ?? 0) / 100) / 10}s
+                    </span>
+                  </div>
                 </div>
-                <h2 className="roast-title">The verdict is in.</h2>
-                <div className="roast-lines">
+                <div className="g-verdict">
                   {(roastData?.lines ?? []).map((line) => (
-                    <p key={line} className="live-roast">
-                      {line}
-                    </p>
+                    <p key={line}>{line}</p>
                   ))}
                 </div>
-                <div className="roast-numbers">
+                <div className="w-actions">
+                  <button type="button" className="w-play w-play-lg" onClick={finish}>
+                    make my report
+                  </button>
+                </div>
+              </>
+            ) : null}
+
+            {stage !== "ready" && !busy ? (
+              <>
+                <div className="g-hud">
                   <div>
-                    <strong>{analysis?.objects.length ?? 0}</strong>
-                    <span>OBJECTS DETECTED</span>
+                    <span className="g-label">Round</span>
+                    <span className="g-num">{mode === "find" ? "1/3" : "—"}</span>
                   </div>
                   <div>
-                    <strong>
-                      {Math.round((analysis?.inferenceMs ?? 0) / 100) / 10}
-                      <span>s</span>
-                    </strong>
-                    <span>ON-DEVICE INFERENCE</span>
+                    <span className="g-label">Time</span>
+                    <span className="g-num">{mode === "find" ? "00:20" : "—"}</span>
+                  </div>
+                  <div>
+                    <span className="g-label">Score</span>
+                    <span className="g-num">0</span>
                   </div>
                 </div>
-                <Button size="hero" onClick={finish}>
-                  <Flame /> Make my report
-                </Button>
+                <p className="g-challenge">{mode === "find" ? "Find it" : "Take it"}</p>
+                <p className="w-small">
+                  {mode === "find"
+                    ? "The model names a thing on your photo. Tap it before the clock runs out: +100 for a hit, nothing for a miss, 300 total."
+                    : "The model reads your photo once and writes a verdict scored out of 100, from fixed templates. It only talks about objects it actually found."}
+                </p>
+                <p className="w-small">
+                  The photo is scanned in this tab and never uploaded. The 21.6 MB model is cached
+                  after the first visit.
+                </p>
               </>
             ) : null}
           </aside>
         </div>
+
+        {error ? (
+          <p className="w-feedback bad" role="alert">
+            <CircleAlert size={13} /> {error}
+          </p>
+        ) : null}
+
+        <hr className="w-rule" />
+        <div className="w-actions">
+          <button
+            type="button"
+            className="w-linkish"
+            onClick={() => inputRef.current?.click()}
+            disabled={busy}
+          >
+            <Upload size={12} /> upload a photo
+          </button>
+          <span className="w-sep">|</span>
+          <button
+            type="button"
+            className="w-linkish"
+            onClick={startCamera}
+            disabled={busy || cameraOn}
+          >
+            <Camera size={12} /> use the camera
+          </button>
+          <span className="w-sep">|</span>
+          <button
+            type="button"
+            className="w-linkish"
+            onClick={() => {
+              stopCamera();
+              void run(loadSample());
+            }}
+            disabled={busy}
+          >
+            <Sparkles size={12} /> use the sample desk
+          </button>
+          <span className="w-small">jpg · png · webp · 15 mb</span>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(event) => {
+              onFile(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+        </div>
+        <p className="w-small">
+          Mirage runs in this tab. <Link to="/how-it-works">how it works</Link>
+        </p>
       </main>
       <Footer />
     </>
   );
-}
-
-async function loadSample(): Promise<ImageBitmap> {
-  const response = await fetch(SAMPLE_PHOTO);
-  const blob = await response.blob();
-  return createImageBitmap(blob);
 }

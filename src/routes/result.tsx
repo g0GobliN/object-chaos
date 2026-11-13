@@ -4,7 +4,6 @@ import { Asterisk, Download, RotateCcw, Share2 } from "lucide-react";
 
 import { Header, Footer } from "@/components/chaos/shell";
 import { Report } from "@/components/chaos/report";
-import { Button } from "@/components/ui/button";
 import { pageHead } from "@/lib/chaos";
 import { loadResult, type StoredResult } from "@/lib/result-store";
 
@@ -116,6 +115,12 @@ function Result() {
     context.font = "22px sans-serif";
     context.fillText(`${result.objectCount} objects detected on-device`, 70, 470);
 
+    if (result.selected) {
+      context.fillStyle = color("--chaos-lime", "#c6f24f");
+      context.font = "22px sans-serif";
+      context.fillText(`You tapped: ${result.selected}`, 70, 502);
+    }
+
     context.fillStyle = color("--foreground", "#f5f2ff");
     context.font = "34px sans-serif";
     let line = "";
@@ -170,20 +175,19 @@ function Result() {
           objectCount={result.objectCount}
           objectNames={result.objectNames}
           textLines={result.textLines}
+          selected={result.selected ?? null}
         />
 
         <div className="result-actions">
-          <Button asChild size="hero">
-            <Link to="/play" search={{ mode }}>
-              <RotateCcw /> Play again
-            </Link>
-          </Button>
-          <Button size="hero" variant="outline" onClick={share}>
+          <Link to="/play" search={{ mode }} className="ac-btn">
+            <RotateCcw /> Play again
+          </Link>
+          <button type="button" className="ac-btn ac-btn-dark" onClick={share}>
             <Share2 /> Share result
-          </Button>
-          <Button size="hero" variant="ghost" onClick={() => void download()}>
+          </button>
+          <button type="button" className="ac-btn ac-btn-dark" onClick={() => void download()}>
             <Download /> Download card
-          </Button>
+          </button>
         </div>
         <p className="share-notice" role="status">
           {notice ||

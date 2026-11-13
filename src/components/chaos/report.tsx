@@ -7,6 +7,7 @@ type ReportProps = {
   objectCount?: number;
   objectNames?: string[];
   textLines?: string[];
+  selected?: string | null;
 };
 
 export function Report({
@@ -16,6 +17,7 @@ export function Report({
   objectCount = 0,
   objectNames = [],
   textLines = [],
+  selected = null,
 }: ReportProps) {
   const highlights = objectNames.slice(0, 4);
   return (
@@ -30,6 +32,7 @@ export function Report({
         </span>
         <span>{mode === "find" ? "FIND THE OBJECT" : "OBJECT ROAST"}</span>
       </div>
+      {selected ? <p className="report-selected">YOU TAPPED · {selected}</p> : null}
       <div className="report-score">
         <span>{score}</span>
         <div>

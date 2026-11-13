@@ -8,6 +8,7 @@ export type StoredResult = {
   textLines: string[];
   inferenceMs: number;
   image: string | null;
+  selected?: string | null;
 };
 
 const KEY = "objectchaos:result";
