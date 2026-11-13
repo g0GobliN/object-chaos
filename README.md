@@ -69,15 +69,15 @@ The same directory deploys unchanged to Cloudflare Pages (`dist-static` as the o
 
 Measured on a Windows 11 desktop, Chromium 130 (Electron), 16 logical cores, 8 GB device memory, no cross-origin isolation (the runtime does not need `SharedArrayBuffer`).
 
-| Image (longest edge) | Objects | OCR lines | Inference |
-| --- | --- | --- | --- |
-| Desk, 1536 px (Node harness) | 10 | 2 | 4.3 s |
-| Desk, 768 px (Node harness) | 8 | – | 4.8 s |
-| Bus, 768 px | 7 | 6 | 2.7 s |
-| Portrait, 768 px | 4 | 0 | 1.8 s |
-| Dog, 768 px | 4 | 0 | 1.9 s |
-| Desk, 768 px (in browser, dev build) | 7 | 0 | 4.0–4.5 s |
-| Desk, 768 px (in browser, static build) | 7 | 0 | 4.6 s |
+| Image (longest edge)                    | Objects | OCR lines | Inference |
+| --------------------------------------- | ------- | --------- | --------- |
+| Desk, 1536 px (Node harness)            | 10      | 2         | 4.3 s     |
+| Desk, 768 px (Node harness)             | 8       | –         | 4.8 s     |
+| Bus, 768 px                             | 7       | 6         | 2.7 s     |
+| Portrait, 768 px                        | 4       | 0         | 1.8 s     |
+| Dog, 768 px                             | 4       | 0         | 1.9 s     |
+| Desk, 768 px (in browser, dev build)    | 7       | 0         | 4.0–4.5 s |
+| Desk, 768 px (in browser, static build) | 7       | 0         | 4.6 s     |
 
 ### 20-photo sweep
 
