@@ -183,7 +183,15 @@ function Play() {
         return;
       }
       stopCamera();
-      void run(createImageBitmap(file));
+      void run(
+        createImageBitmap(file).catch(() => {
+          // Browsers cannot decode every image format that exists; iPhone HEIC is the
+          // common case on desktop Chrome. Say so instead of blaming the model.
+          throw new Error(
+            "This browser could not decode that image. iPhone HEIC photos often fail — export it as JPEG or PNG and try again.",
+          );
+        }),
+      );
     },
     [run, stopCamera],
   );
