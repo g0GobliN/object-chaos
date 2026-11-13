@@ -20,7 +20,11 @@ const MODEL_CACHE = "object-chaos-mirage-1";
 const OPTIONS = JSON.stringify({
   sections: ["objects", "text"],
   fields: ["bbox", "score", "position", "description"],
-  max_objects: 20,
+  // Let the model itself discard weak regions instead of naming them and
+  // letting the app throw the names away afterwards.
+  conf: 0.5,
+  text_conf: 0.5,
+  max_objects: 16,
 });
 
 const OUTPUT_CAPACITY = 1 << 20;
