@@ -76,6 +76,34 @@ describe("adaptMirage", () => {
     expect(analysis.objects[0]?.confidence).toBe(0.91);
   });
 
+  it("drops the scene-sized box so it cannot swallow every tap", () => {
+    const analysis = adaptMirage(
+      inference([
+        { id: 1, name: "desk", score: 0.5, bbox: [3, 9, 995, 984] },
+        { id: 2, name: "cup", score: 0.8, bbox: [380, 110, 530, 400] },
+      ]),
+      768,
+      512,
+      1,
+    );
+
+    expect(analysis.objects.map((object) => object.name)).toEqual(["cup"]);
+  });
+
+  it("drops a whole-frame detection even when its label is not a background word", () => {
+    const analysis = adaptMirage(
+      inference([
+        { id: 1, name: "backpack", score: 0.9, bbox: [0, 0, 1000, 900] },
+        { id: 2, name: "keys", score: 0.6, bbox: [100, 700, 240, 820] },
+      ]),
+      1000,
+      1000,
+      1,
+    );
+
+    expect(analysis.objects.map((object) => object.name)).toEqual(["keys"]);
+  });
+
   it("treats an unparseable response as an error rather than empty success", () => {
     expect(() => adaptMirage("not json", 100, 100, 0)).toThrow(/malformed/i);
   });

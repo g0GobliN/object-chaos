@@ -26,7 +26,9 @@ export function DeskViewer({
   inferenceMs,
   caption,
 }: DeskViewerProps) {
-  const shown = compact ? objects.slice(0, 6) : objects;
+  // Smallest boxes last: they sit on top, so a big box never swallows their taps.
+  const ordered = [...objects].sort((a, b) => b.area - a.area);
+  const shown = compact ? ordered.slice(0, 6) : ordered;
   const total = objects.length;
 
   return (

@@ -38,12 +38,26 @@ const BACKGROUND_NAMES = new Set([
   "background",
   "wall",
   "floor",
+  "ground",
   "ceiling",
   "sky",
   "room",
   "surface",
   "table top",
+  "desk",
+  "table",
+  "countertop",
+  "photo",
+  "image",
+  "picture",
+  "illustration",
 ]);
+
+/**
+ * A detection this large is the scene itself, not a thing you can tap. It also
+ * covers every other box, so it would swallow every tap in the game.
+ */
+const MAX_TAPPABLE_AREA = 0.6;
 
 function clean(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -158,7 +172,8 @@ export function adaptMirage(
   }
 
   const objects = kept
-    .filter((object) => !BACKGROUND_NAMES.has(object.name.toLowerCase()) || object.area < 0.85)
+    .filter((object) => object.area < MAX_TAPPABLE_AREA)
+    .filter((object) => !BACKGROUND_NAMES.has(object.name.toLowerCase()))
     .map((object, index) => ({ ...object, id: `object_${index + 1}` }));
 
   const textLines = (parsed.text ?? [])

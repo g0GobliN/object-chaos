@@ -468,7 +468,7 @@ function Play() {
                       {feedback === "correct"
                         ? "+100. Sharp eyes."
                         : feedback === "incorrect"
-                          ? "Not that one. Keep looking?"
+                          ? `Not that one — you tapped the ${tapped ?? "background"}. Keep looking?`
                           : `Skipped, no points. Mirage counted: ${answerNames.join(", ") || "nothing certain"}.`}
                     </p>
                   ) : null}
