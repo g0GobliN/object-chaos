@@ -171,10 +171,7 @@ export function adaptMirage(
     if (!duplicate) kept.push(candidate);
   }
 
-  const objects = kept
-    .filter((object) => object.area < MAX_TAPPABLE_AREA)
-    .filter((object) => !BACKGROUND_NAMES.has(object.name.toLowerCase()))
-    .map((object, index) => ({ ...object, id: `object_${index + 1}` }));
+  const objects = finaliseObjects(kept);
 
   const textLines = (parsed.text ?? [])
     .map((line) => clean(line.text))
@@ -198,5 +195,39 @@ export function adaptMirage(
     width,
     height,
     inferenceMs,
+  };
+}
+
+/** Drops scene-sized and background detections, then gives the survivors fresh ids. */
+function finaliseObjects(kept: DetectedObject[]): DetectedObject[] {
+  return kept
+    .filter((object) => object.area < MAX_TAPPABLE_AREA)
+    .filter((object) => !BACKGROUND_NAMES.has(object.name.toLowerCase()))
+    .map((object, index) => ({ ...object, id: `object_${index + 1}` }));
+}
+
+/**
+ * Combines two passes over the same photo (a fast one and a detailed one).
+ * Mirage returns boxes on a fixed 1000-unit grid, so coordinates from both
+ * passes are already comparable regardless of the resolution each pass saw.
+ * The same object found twice is kept once, with the more confident label.
+ */
+export function mergeAnalyses(primary: Analysis, extra: Analysis): Analysis {
+  const pool = [...primary.objects, ...extra.objects].sort((a, b) => b.confidence - a.confidence);
+  const kept: DetectedObject[] = [];
+  for (const candidate of pool) {
+    const duplicate = kept.find(
+      (existing) => sameThing(existing, candidate) || iou(existing, candidate) >= 0.55,
+    );
+    if (!duplicate) kept.push(candidate);
+  }
+
+  return {
+    scene: { ...extra.scene, ...primary.scene },
+    objects: finaliseObjects(kept),
+    textLines: [...new Set([...primary.textLines, ...extra.textLines])].slice(0, 12),
+    width: primary.width,
+    height: primary.height,
+    inferenceMs: primary.inferenceMs + extra.inferenceMs,
   };
 }

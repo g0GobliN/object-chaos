@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { adaptMirage, MIRAGE_GRID } from "./adapter";
+import { adaptMirage, mergeAnalyses, MIRAGE_GRID } from "./adapter";
 
 const inference = (objects: unknown[]) =>
   JSON.stringify({
@@ -102,6 +102,54 @@ describe("adaptMirage", () => {
     );
 
     expect(analysis.objects.map((object) => object.name)).toEqual(["keys"]);
+  });
+
+  it("merges a fast pass and a closer pass without duplicating what both found", () => {
+    const fast = adaptMirage(
+      inference([
+        { id: 1, name: "chair", score: 0.6, bbox: [100, 100, 400, 400] },
+        { id: 2, name: "plant", score: 0.5, bbox: [600, 100, 900, 500] },
+      ]),
+      768,
+      512,
+      1000,
+    );
+    const closer = adaptMirage(
+      inference([
+        { id: 1, name: "chair", score: 0.8, bbox: [105, 102, 398, 404] },
+        { id: 2, name: "cup", score: 0.7, bbox: [200, 600, 300, 700] },
+      ]),
+      1024,
+      683,
+      2000,
+    );
+
+    const merged = mergeAnalyses(fast, closer);
+    expect(merged.objects.map((object) => object.name)).toEqual(["chair", "cup", "plant"]);
+    expect(merged.objects.find((object) => object.name === "chair")?.confidence).toBe(0.8);
+    expect(merged.objects.map((object) => object.id)).toEqual(["object_1", "object_2", "object_3"]);
+    expect(merged.inferenceMs).toBe(3000);
+  });
+
+  it("keeps the extra objects a closer pass found and drops merged scene boxes", () => {
+    const fast = adaptMirage(
+      inference([{ id: 1, name: "cup", score: 0.5, bbox: [300, 300, 450, 500] }]),
+      768,
+      512,
+      100,
+    );
+    const closer = adaptMirage(
+      inference([
+        { id: 1, name: "desk", score: 0.9, bbox: [0, 0, 1000, 1000] },
+        { id: 2, name: "keys", score: 0.6, bbox: [500, 600, 650, 700] },
+      ]),
+      1024,
+      683,
+      100,
+    );
+
+    const merged = mergeAnalyses(fast, closer);
+    expect(merged.objects.map((object) => object.name).sort()).toEqual(["cup", "keys"]);
   });
 
   it("treats an unparseable response as an error rather than empty success", () => {

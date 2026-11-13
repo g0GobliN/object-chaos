@@ -6,7 +6,7 @@ import { DeskViewer } from "@/components/chaos/desk-viewer";
 import { Footer, Header } from "@/components/chaos/shell";
 import { SAMPLE_ANALYSIS, SAMPLE_PHOTO, pageHead } from "@/lib/chaos";
 import { describePixels, localInferenceSupported, type MirageProgress } from "@/lib/mirage/client";
-import { adaptMirage, type Analysis } from "@/lib/mirage/adapter";
+import { adaptMirage, mergeAnalyses, type Analysis } from "@/lib/mirage/adapter";
 import { buildChallenges, type Challenge } from "@/lib/game/challenges";
 import { buildRoast, type Roast } from "@/lib/game/roasts";
 import { saveResult } from "@/lib/result-store";
@@ -29,6 +29,8 @@ const MAX_BYTES = 15 * 1024 * 1024;
 const MIN_IMAGE_EDGE = 64;
 const MAX_IMAGE_EDGE = 12000;
 const ROUND_SECONDS = 20;
+const DETAIL_EDGE = 1152;
+const MIN_DETAIL_EDGE = 320;
 const SEEN_KEY = "objectchaos:seen-challenges";
 
 function readSeenChallenges(): string[] {
@@ -73,6 +75,7 @@ function Play() {
   const [image, setImage] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [progress, setProgress] = useState<MirageProgress | null>(null);
+  const [detailPass, setDetailPass] = useState(false);
   const [error, setError] = useState("");
 
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -141,22 +144,48 @@ function Play() {
         `That image is ${pixelsWide}×${pixelsHigh} pixels. The limit is ${MAX_IMAGE_EDGE} px on the longest side.`,
       );
     }
-    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
-    const width = Math.max(1, Math.round(bitmap.width * scale));
-    const height = Math.max(1, Math.round(bitmap.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    if (!context) throw new Error("This browser cannot prepare the image for analysis");
-    context.drawImage(bitmap, 0, 0, width, height);
+    const draw = (edge: number, allowUpscale = false) => {
+      const ratio = edge / Math.max(bitmap.width, bitmap.height);
+      const scale = allowUpscale ? ratio : Math.min(1, ratio);
+      const width = Math.max(1, Math.round(bitmap.width * scale));
+      const height = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) throw new Error("This browser cannot prepare the image for analysis");
+      context.drawImage(bitmap, 0, 0, width, height);
+      return { canvas, context, width, height };
+    };
 
-    const pixels = context.getImageData(0, 0, width, height);
-    const preview = canvas.toDataURL("image/jpeg", 0.85);
+    const first = draw(MAX_EDGE);
+    const firstPixels = first.context.getImageData(0, 0, first.width, first.height);
+    // A closer pass finds small things the fast one misses. Skipped when the
+    // photo is already smaller than the detail pass would render it.
+    const detail =
+      Math.max(pixelsWide, pixelsHigh) > MIN_DETAIL_EDGE ? draw(DETAIL_EDGE, true) : null;
+    const detailPixels = detail
+      ? detail.context.getImageData(0, 0, detail.width, detail.height)
+      : null;
     bitmap.close();
 
-    const output = await describePixels(pixels, setProgress);
-    const result = adaptMirage(output.json, width, height, output.ms);
+    const output = await describePixels(firstPixels, setProgress);
+    let result = adaptMirage(output.json, first.width, first.height, output.ms);
+
+    if (detail && detailPixels) {
+      setDetailPass(true);
+      try {
+        const closer = await describePixels(detailPixels, setProgress);
+        result = mergeAnalyses(
+          result,
+          adaptMirage(closer.json, detail.width, detail.height, closer.ms),
+        );
+      } finally {
+        setDetailPass(false);
+      }
+    }
+
+    const preview = first.canvas.toDataURL("image/jpeg", 0.85);
 
     if (result.objects.length === 0) {
       throw new Error(
@@ -413,8 +442,10 @@ function Play() {
                   <span style={{ width: `${progressPercent(progress) ?? 100}%` }} />
                 </div>
                 <p className="g-attract-note">
-                  {progressCopy(progress)}
-                  {progressPercent(progress) !== null ? ` · ${progressPercent(progress)}%` : ""}
+                  {detailPass ? "Second look at full detail" : progressCopy(progress)}
+                  {!detailPass && progressPercent(progress) !== null
+                    ? ` · ${progressPercent(progress)}%`
+                    : ""}
                 </p>
               </div>
             ) : null}

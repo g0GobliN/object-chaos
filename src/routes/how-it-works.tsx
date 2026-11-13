@@ -33,7 +33,8 @@ function How() {
           </li>
           <li>
             <strong>The model reads it.</strong> 21.6 MB of Cactus Mirage weights, downloaded once
-            and cached. It returns names, boxes and confidence scores.
+            and cached. It looks twice — a quick pass, then a closer one — and merges what both
+            found, so small objects are not missed. It returns names, boxes and confidence scores.
           </li>
           <li>
             <strong>The game uses that list.</strong> Challenges or a roast are generated in the tab
