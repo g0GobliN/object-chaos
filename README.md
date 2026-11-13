@@ -128,7 +128,7 @@ Image data stays in the page: it is drawn to a canvas, passed as pixels to a Wor
 
 ## Brand assets
 
-`logo/logo.png` is the source wordmark (1536×1024). Everything the site serves is derived from it in `public/brand/`: `logo.webp` (hero), `logo-header.webp` (header/footer), `icon-16/64/192/512`-style PNG icons, `og.jpg` (1200×630 social card), plus `public/favicon.ico` (64×64 PNG-in-ICO). Regenerate with ffmpeg, e.g.:
+`logo/logo.png` is the source wordmark (1536×1024). Everything the site serves is derived from it in `public/brand/`: `logo.webp` (hero), `logo-header.webp` (header/footer), `icon-64/128/180.png` (same 3:2 aspect as the source, no padding), `og.jpg` (1200×630 social card), plus `public/favicon.ico` (the 64 px icon wrapped as PNG-in-ICO). Regenerate with ffmpeg, e.g.:
 
 ```bash
 ffmpeg -i logo/logo.png -vf "scale=1024:-1:flags=lanczos" -c:v libwebp -quality 90 public/brand/logo.webp
