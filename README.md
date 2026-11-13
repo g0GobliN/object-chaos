@@ -102,12 +102,14 @@ Peak JS heap after a round was ~7 MB; the model lives in the WASM heap, which th
 
 ## What works, and what does not
 
-Verified by hand on the deployed URL and locally:
+Verified on the deployed URL, not just locally:
 
-- Upload, camera capture (where `getUserMedia` exists), sample photo.
-- Real Mirage inference in the browser on the public site — 7 objects on the sample desk, boxes aligned to the image.
+- **Upload:** a real JPEG driven through the file input on the live site → inference → challenge.
+- **Camera:** Chromium 157 with a synthetic camera (`--use-fake-device-for-media-stream`, `--use-fake-ui-for-media-stream`, `--use-file-for-fake-video-capture=desk.y4m`) produced a 640×480 live `video` element; the app's Capture button drew it to canvas, ran inference on it (9 objects, 4.07 s) and generated a challenge. The whole round was then played to 300/300.
+- **Sample photo:** 7 objects on the sample desk, boxes aligned to the image.
 - Both games end to end, scoring, feedback, restart.
-- `/result` with real object chips and verdict, 1080×1080 PNG card (103 KB), Web Share with clipboard fallback.
+- `/result` with real object chips and verdict.
+- **PNG card:** clicking Download card wrote `object-chaos-report.png` to a real download directory on disk — 111,639 bytes, PNG signature, 1080×1080 IHDR — and that file renders `300 FINAL SCORE`, `9 objects detected on-device` and the exact verdict generated for that photo. Web Share with clipboard fallback is wired but the native share sheet needs a real OS/browser to observe.
 
 Known limitations:
 
@@ -115,8 +117,8 @@ Known limitations:
 - **Challenges depend on the photo.** A scene with fewer than two objects cannot start a round; challenges are only drawn from attributes that exist (colour, material, position, size, category, OCR, duplicates), so variety scales with how much the model described.
 - **768 px downscale.** Faster and lighter, at the cost of small-object recall. Higher resolutions mostly add latency.
 - **First load needs the network** to fetch the model from Hugging Face (CORS is enabled there). After that it is cached; there is no offline-first app shell.
-- **Browsers tested:** Chromium 130 desktop only. Firefox, Safari/iOS and Android Chrome were not tested on real devices — the runtime needs WebAssembly and Cache Storage; if either is missing the page reports that local AI is unavailable rather than calling a server.
-- **Mobile performance** is expected to be considerably slower than desktop; not measured.
+- **Browsers:** Chromium only — 130 (desktop, dev and static build) and 157 (headless, with a fake camera device). Firefox, Safari/iOS and Android Chrome are untested on real devices. The runtime needs WebAssembly and Cache Storage; if either is missing the page reports that local AI is unavailable rather than calling a server.
+- **Mobile:** layout, touch targets and box alignment were checked at a 390×844 viewport in desktop Chromium; not verified on real phone hardware, and mobile inference speed is unmeasured.
 - Roasts are templates, not generated text, so they can repeat between similar photos.
 
 ## Privacy
