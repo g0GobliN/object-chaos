@@ -43,4 +43,5 @@ roadmap.md
 
 # static build output shipped to hosting
 dist-static
-goal.md.board-token
+goal.md
+.board-token
