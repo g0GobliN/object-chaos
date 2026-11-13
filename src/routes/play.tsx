@@ -334,7 +334,7 @@ function Play() {
             ) : (
               <DeskViewer
                 image={image ?? (stage === "ready" ? undefined : SAMPLE_PHOTO)}
-                objects={shownAnalysis.objects}
+                objects={busy ? [] : shownAnalysis.objects}
                 selected={selected}
                 onSelect={choose}
                 interactive={stage === "ready" && mode === "find" && !complete}

@@ -3043,6 +3043,22 @@ main.w-wrap {
   background: #1b2a39;
   box-shadow: none;
 }
+/* Keep the photo's own proportions: cropping would shift every detection box. */
+.w-photo .desk-photo,
+.g-stage .desk-photo {
+  aspect-ratio: auto;
+}
+.w-photo .desk-photo-img,
+.g-stage .desk-photo-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: fill;
+}
+.w-photo .desk-photo-empty,
+.g-stage .desk-photo-empty {
+  aspect-ratio: 1.5;
+}
 .w-photo .viewer-top,
 .w-photo .viewer-bottom,
 .g-stage .viewer-top,
@@ -3201,7 +3217,7 @@ main.w-wrap {
 }
 .g-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(255px, 0.8fr);
+  grid-template-columns: minmax(0, 1.6fr) minmax(225px, 0.75fr);
   gap: 18px;
   align-items: start;
 }
@@ -3485,6 +3501,31 @@ main.w-wrap {
   color: #66788a;
   font-size: 10.5px;
 }
+@media (max-width: 1000px) {
+  .hero,
+  .g-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .hero-photo {
+    order: -1;
+  }
+  .g-stage,
+  .g-side {
+    max-width: 620px;
+    margin-inline: auto;
+  }
+  .g-side {
+    width: 100%;
+  }
+  .g-side .g-hud {
+    margin-bottom: 10px;
+  }
+  .g-side .g-challenge {
+    margin-bottom: 6px;
+  }
+}
+
 @media (max-width: 860px) {
   .hero,
   .g-layout {
