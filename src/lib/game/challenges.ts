@@ -41,17 +41,6 @@ const CATEGORIES: Array<{ id: string; phrase: string; words: string[] }> = [
   },
 ];
 
-const MATERIAL_WORDS = [
-  "metal",
-  "wood",
-  "plastic",
-  "glass",
-  "ceramic",
-  "fabric",
-  "leather",
-  "paper",
-];
-
 function hasWord(object: DetectedObject, words: string[]): boolean {
   const name = object.name.toLowerCase();
   return words.some((word) => name.includes(word));
@@ -66,45 +55,34 @@ function tally(objects: DetectedObject[], matches: (object: DetectedObject) => b
  * challenge has at least one matching object and at least one object that does
  * not match, so the player always makes a real choice.
  */
-export function buildChallenges(analysis: Analysis, limit = 3): Challenge[] {
+export function buildChallenges(analysis: Analysis, limit = 3, seen: string[] = []): Challenge[] {
   const objects = analysis.objects;
   if (objects.length < 2) return [];
 
   const candidates: Challenge[] = [];
+  const texts = new Set<string>();
   const push = (challenge: Omit<Challenge, "answerCount">) => {
     const answerCount = challenge.answerIds.length;
     if (answerCount === 0 || answerCount >= objects.length) return;
+    if (texts.has(challenge.text)) return;
+    texts.add(challenge.text);
     candidates.push({ ...challenge, answerCount });
   };
 
-  const colors = new Map<string, string[]>();
+  // Only ask about things the model actually located, by name. Guessed
+  // colours, materials and "smallest object" prompts are not visually
+  // checkable, so the player cannot tell what the game is asking for.
+  const byName = new Map<string, DetectedObject[]>();
   for (const object of objects) {
-    if (!object.color) continue;
-    const color = object.color.toLowerCase();
-    colors.set(color, [...(colors.get(color) ?? []), object.id]);
+    const key = object.name.toLowerCase();
+    byName.set(key, [...(byName.get(key) ?? []), object]);
   }
-  for (const [color, ids] of colors) {
+  for (const [name, group] of byName) {
     push({
-      id: `color_${color}`,
-      kind: "color",
-      text: `Find something ${color}.`,
-      answerIds: ids,
-    });
-  }
-
-  const materials = new Map<string, string[]>();
-  for (const object of objects) {
-    if (!object.material) continue;
-    const material = object.material.toLowerCase();
-    if (!MATERIAL_WORDS.includes(material)) continue;
-    materials.set(material, [...(materials.get(material) ?? []), object.id]);
-  }
-  for (const [material, ids] of materials) {
-    push({
-      id: `material_${material}`,
-      kind: "material",
-      text: `Find something made of ${material}.`,
-      answerIds: ids,
+      id: `find_${name.replace(/\s+/g, "_")}`,
+      kind: "name",
+      text: `Find the ${name}.`,
+      answerIds: group.map((object) => object.id),
     });
   }
 
@@ -120,29 +98,6 @@ export function buildChallenges(analysis: Analysis, limit = 3): Challenge[] {
       kind: "position",
       text: half.text,
       answerIds: tally(objects, half.test),
-    });
-  }
-
-  const smallest = objects.reduce(
-    (min, object) => (object.area < min.area ? object : min),
-    objects[0]!,
-  );
-  const largest = objects.reduce(
-    (max, object) => (object.area > max.area ? object : max),
-    objects[0]!,
-  );
-  push({
-    id: "size_smallest",
-    kind: "size",
-    text: "Find the smallest object.",
-    answerIds: [smallest.id],
-  });
-  if (largest.id !== smallest.id) {
-    push({
-      id: "size_largest",
-      kind: "size",
-      text: "Find the largest object.",
-      answerIds: [largest.id],
     });
   }
 
@@ -176,15 +131,10 @@ export function buildChallenges(analysis: Analysis, limit = 3): Challenge[] {
     });
   }
 
-  const byName = new Map<string, DetectedObject[]>();
-  for (const object of objects) {
-    const key = object.name.toLowerCase();
-    byName.set(key, [...(byName.get(key) ?? []), object]);
-  }
   for (const [name, group] of byName) {
     if (group.length < 2) continue;
     push({
-      id: `name_${name.replace(/\s+/g, "_")}`,
+      id: `count_${name.replace(/\s+/g, "_")}`,
       kind: "name",
       text: `Find one of the ${group.length} ${name}s.`,
       answerIds: group.map((object) => object.id),
@@ -197,7 +147,14 @@ export function buildChallenges(analysis: Analysis, limit = 3): Challenge[] {
     for (const char of challenge.id) hash = (hash * 31 + char.charCodeAt(0)) % 100000;
     return hash;
   };
-  candidates.sort((a, b) => rank(a) - rank(b));
+  // Challenges this tab has already asked come last, so a new photo does not
+  // replay the same three questions before showing anything new.
+  const alreadySeen = new Set(seen);
+  candidates.sort((a, b) => {
+    const seenA = alreadySeen.has(a.id) ? 1 : 0;
+    const seenB = alreadySeen.has(b.id) ? 1 : 0;
+    return seenA - seenB || rank(a) - rank(b);
+  });
 
   const picked: Challenge[] = [];
   const usedKinds = new Set<ChallengeKind>();

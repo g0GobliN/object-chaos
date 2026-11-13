@@ -29,6 +29,26 @@ const MAX_BYTES = 15 * 1024 * 1024;
 const MIN_IMAGE_EDGE = 64;
 const MAX_IMAGE_EDGE = 12000;
 const ROUND_SECONDS = 20;
+const SEEN_KEY = "objectchaos:seen-challenges";
+
+function readSeenChallenges(): string[] {
+  try {
+    const raw = sessionStorage.getItem(SEEN_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberChallenges(ids: string[]) {
+  try {
+    const next = [...new Set([...readSeenChallenges(), ...ids])].slice(-120);
+    sessionStorage.setItem(SEEN_KEY, JSON.stringify(next));
+  } catch {
+    // Storage being unavailable just means a challenge could repeat.
+  }
+}
 
 type Stage = "idle" | "analyzing" | "ready";
 
@@ -102,7 +122,7 @@ function Play() {
 
   useEffect(() => {
     if (mode !== "find" || stage !== "ready" || complete) return;
-    if (seconds === 0 && !feedback) setFeedback("incorrect");
+    if (seconds === 0 && !feedback) setFeedback("skipped");
   }, [mode, stage, complete, seconds, feedback]);
 
   const analyse = useCallback(async (bitmap: ImageBitmap) => {
@@ -144,9 +164,12 @@ function Play() {
       );
     }
 
+    const nextChallenges = buildChallenges(result, 3, readSeenChallenges());
+    rememberChallenges(nextChallenges.map((challenge) => challenge.id));
+
     setImage(preview);
     setAnalysis(result);
-    setChallenges(buildChallenges(result, 3));
+    setChallenges(nextChallenges);
     setRoastData(buildRoast(result));
     setRound(0);
     setScore(0);
@@ -337,7 +360,14 @@ function Play() {
                 objects={busy ? [] : shownAnalysis.objects}
                 selected={selected}
                 onSelect={choose}
-                interactive={stage === "ready" && mode === "find" && !complete}
+                interactive={
+                  stage === "ready" &&
+                  mode === "find" &&
+                  !complete &&
+                  seconds > 0 &&
+                  feedback !== "correct" &&
+                  feedback !== "skipped"
+                }
                 inferenceMs={
                   stage === "ready" ? analysis?.inferenceMs : SAMPLE_ANALYSIS.inferenceMs
                 }
@@ -469,7 +499,9 @@ function Play() {
                         ? "+100. Sharp eyes."
                         : feedback === "incorrect"
                           ? `Not that one — you tapped the ${tapped ?? "background"}. Keep looking?`
-                          : `Skipped, no points. Mirage counted: ${answerNames.join(", ") || "nothing certain"}.`}
+                          : seconds === 0
+                            ? `Time's up. Mirage counted: ${answerNames.join(", ") || "nothing certain"}.`
+                            : `Skipped, no points. Mirage counted: ${answerNames.join(", ") || "nothing certain"}.`}
                     </p>
                   ) : null}
 

@@ -41,9 +41,29 @@ describe("buildChallenges", () => {
     }
   });
 
-  it("does not produce a colour challenge for a colour nothing has", () => {
+  it("does not ask about guessed colours or materials the player cannot check", () => {
     const challenges = buildChallenges(desk, 10);
-    expect(challenges.some((challenge) => challenge.text === "Find something purple.")).toBe(false);
+    expect(
+      challenges.some((challenge) => /made of|something (white|black|green)/.test(challenge.text)),
+    ).toBe(false);
+  });
+
+  it("asks for detected objects by name", () => {
+    const challenges = buildChallenges(desk, 10).map((challenge) => challenge.text);
+    expect(challenges).toContain("Find the plant.");
+    expect(challenges).toContain("Find the keyboard.");
+  });
+
+  it("does not repeat the same question twice in one photo", () => {
+    const texts = buildChallenges(desk, 10).map((challenge) => challenge.text);
+    expect(new Set(texts).size).toBe(texts.length);
+  });
+
+  it("puts challenges this tab has already seen last", () => {
+    const all = buildChallenges(desk, 10).map((challenge) => challenge.id);
+    const fresh = buildChallenges(desk, 3, [all[0]!]).map((challenge) => challenge.id);
+    expect(fresh[0]).not.toBe(all[0]);
+    expect(fresh).toHaveLength(3);
   });
 
   it("is deterministic for the same photo", () => {
