@@ -12,7 +12,12 @@ export const SAMPLE_ANALYSIS: Analysis = adaptMirage(
   SAMPLE_INFERENCE.ms,
 );
 
-export function pageHead(title: string, description: string) {
+/** Canonical origin. Link unfurlers require absolute URLs, not paths. */
+export const SITE_ORIGIN = "https://objectchaos.freebuff.page";
+
+export const SOCIAL_IMAGE = `${SITE_ORIGIN}/brand/og.jpg`;
+
+export function pageHead(title: string, description: string, path = "/") {
   return {
     meta: [
       { title: `${title} — OBJECT CHAOS` },
@@ -20,9 +25,10 @@ export function pageHead(title: string, description: string) {
       { property: "og:title", content: `${title} — OBJECT CHAOS` },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "/brand/og.jpg" },
+      { property: "og:url", content: `${SITE_ORIGIN}${path}` },
+      { property: "og:image", content: SOCIAL_IMAGE },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:image", content: "/brand/og.jpg" },
+      { name: "twitter:image", content: SOCIAL_IMAGE },
     ],
   };
 }

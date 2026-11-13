@@ -10,6 +10,7 @@ export const Route = createFileRoute("/")({
     pageHead(
       "Your world. Your objects. Your chaos.",
       "Upload a photo, find hidden objects, roast your surroundings and challenge your friends. A free indie photo party game.",
+      "/",
     ),
   component: Index,
 });

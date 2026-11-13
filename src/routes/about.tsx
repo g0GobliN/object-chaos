@@ -10,6 +10,7 @@ export const Route = createFileRoute("/about")({
     pageHead(
       "About the chaos",
       "A little independent internet game with a vision model running on your own device.",
+      "/about",
     ),
   component: About,
 });

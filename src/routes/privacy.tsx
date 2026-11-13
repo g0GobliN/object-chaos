@@ -9,6 +9,7 @@ export const Route = createFileRoute("/privacy")({
     pageHead(
       "Your photos stay yours",
       "OBJECT CHAOS runs Mirage on your device. Your photos are never uploaded.",
+      "/privacy",
     ),
   component: Privacy,
 });

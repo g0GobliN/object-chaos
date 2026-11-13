@@ -32,6 +32,7 @@ export const Route = createFileRoute("/play")({
     pageHead(
       "Play",
       "Upload a photo, let Mirage inspect it on your device, then find the object or get roasted.",
+      "/play",
     ),
   component: Play,
 });

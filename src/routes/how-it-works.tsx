@@ -7,6 +7,7 @@ export const Route = createFileRoute("/how-it-works")({
     pageHead(
       "How it works",
       "Drop a photo, discover the objects, and play your way into a little chaos.",
+      "/how-it-works",
     ),
   component: How,
 });

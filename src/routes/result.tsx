@@ -20,7 +20,11 @@ export const Route = createFileRoute("/result")({
     };
   },
   head: () =>
-    pageHead("Your chaos report", "Your OBJECT CHAOS game result, generated on your device."),
+    pageHead(
+      "Your chaos report",
+      "Your OBJECT CHAOS game result, generated on your device.",
+      "/result",
+    ),
   component: Result,
 });
 

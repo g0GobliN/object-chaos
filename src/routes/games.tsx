@@ -7,6 +7,7 @@ export const Route = createFileRoute("/games")({
     pageHead(
       "Choose your chaos",
       "Play Find the Object or Object Roast. Different games, same questionable surroundings.",
+      "/games",
     ),
   component: Games,
 });
