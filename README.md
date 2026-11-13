@@ -4,7 +4,7 @@
 
 Upload a photo. A 21.6 MB vision model runs **on your device**, finds the objects in it, and a party game breaks out. No account, no upload, no inference bill.
 
-- **Live:** https://site-6c8bf6f8cd9e484683219b608ee86525.freebuff.page
+- **Live:** https://objectchaos.freebuff.page
 - **Repo:** https://github.com/g0GobliN/object-chaos
 
 ## What it does
