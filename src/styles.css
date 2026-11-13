@@ -3730,3 +3730,20 @@ main.w-wrap {
     transform: translateY(-14px) scale(1);
   }
 }
+
+/* Compact board for the sidebar, before a round starts. */
+.g-board-side {
+  margin: 8px 0 10px;
+  padding: 8px 10px;
+  background: #fff;
+}
+
+.g-board-side .g-board-list {
+  margin-top: 2px;
+}
+
+.g-board-side .g-board-list li {
+  grid-template-columns: 16px 1fr auto;
+  padding: 3px 0;
+  font-size: 11px;
+}

@@ -160,7 +160,7 @@ function Play() {
   }, []);
 
   useEffect(() => {
-    if (!complete || mode !== "find") return;
+    if (mode !== "find") return;
     let cancelled = false;
     loadBoard("find")
       .then((entries) => {
@@ -173,6 +173,8 @@ function Play() {
       cancelled = true;
     };
   }, [complete, mode]);
+
+  const topScores = board?.slice(0, 5) ?? [];
 
   const analyse = useCallback(async (bitmap: ImageBitmap) => {
     // close() detaches the bitmap and zeroes its size, so read the dimensions first.
@@ -742,6 +744,23 @@ function Play() {
                   </div>
                 </div>
                 <p className="g-challenge">{mode === "find" ? "Find it" : "Take it"}</p>
+
+                {mode === "find" && topScores.length > 0 ? (
+                  <div className="g-board g-board-side">
+                    <p className="g-board-title">
+                      <Trophy size={13} /> top scores
+                    </p>
+                    <ol className="g-board-list">
+                      {topScores.map((entry, index) => (
+                        <li key={`${entry.name}-${entry.score}-${entry.createdAt}-${index}`}>
+                          <span className="g-board-rank">{index + 1}</span>
+                          <span className="g-board-name">{entry.name}</span>
+                          <span className="g-board-score">{entry.score}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : null}
                 <p className="w-small">
                   {mode === "find"
                     ? `The model names a thing on your photo. Tap it before the clock runs out: +${BASE_POINTS} for a hit, +${QUICK_BONUS} more if you answer with time to spare, nothing for a miss. ${MAX_ROUND_POINTS * 3} total.`
