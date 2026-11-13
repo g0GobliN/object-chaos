@@ -16,6 +16,9 @@ export default defineConfig({
     tanstackStart({
       // Route TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
       server: { entry: "server" },
+      // The app is entirely client-side once loaded (model + games run in the browser),
+      // so it ships as a static SPA that any static host can serve.
+      spa: { enabled: true },
     }),
     // Nitro produces the deployable server bundle in .output/. It is build-only and
     // does not affect `vite dev`.

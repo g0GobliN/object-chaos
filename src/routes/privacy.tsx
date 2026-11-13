@@ -1,15 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
+
 import { Header, Footer } from "@/components/chaos/shell";
 import { pageHead } from "@/lib/chaos";
+
 export const Route = createFileRoute("/privacy")({
   head: () =>
     pageHead(
       "Your photos stay yours",
-      "How the OBJECT CHAOS frontend demo handles your photos and game data.",
+      "OBJECT CHAOS runs Mirage on your device. Your photos are never uploaded.",
     ),
   component: Privacy,
 });
+
 function Privacy() {
   return (
     <>
@@ -22,25 +25,38 @@ function Privacy() {
           <br />
           <span className="text-primary">Still yours.</span>
         </h1>
-        <h2>Photos stay on your device.</h2>
+
+        <h2>Everything is processed on your device.</h2>
         <p>
-          Choosing a photo creates a local preview in your browser. This demo does not upload your
-          photo, analyze it with AI, or send it to a server.
+          OBJECT CHAOS runs Cactus Mirage, a 22 MB vision model, inside your browser using
+          WebAssembly. The photo is decoded locally, analysed locally and thrown away when you close
+          the tab. No image, crop or pixel ever leaves your device.
         </p>
+
+        <h2>The only download is the model.</h2>
+        <p>
+          The first time you play, your browser downloads the model weights from Hugging Face. That
+          is a normal file download with no image data in it. After that it is cached, so later
+          rounds run with no network at all. The model file is public and Apache-2.0 licensed.
+        </p>
+
         <h2>No account. No tracking.</h2>
         <p>
-          There are no accounts, payment systems or analytics integrations in this frontend demo.
-          Game progress is temporary. Reloading the page resets it.
+          There are no accounts, payment systems or analytics integrations. Game progress is
+          temporary and reloading the page resets it. The result card is generated in your browser.
         </p>
+
         <h2>Sharing is your choice.</h2>
         <p>
           Sharing sends the report text to an app you choose, or copies it to your clipboard.
           Downloading creates a result image on your device. Neither includes your photo.
         </p>
-        <h2>Demo data, not a real scan.</h2>
+
+        <h2>What the model gives us.</h2>
         <p>
-          Object boxes, object counts, chaos scores and roasts are mock data. Uploaded photos use
-          the same demonstration boxes.
+          Object names, rough positions, confidence scores and short attributes such as colour and
+          material. If the model is unsure it still reports a low confidence, and the game treats
+          that as a maybe. Nothing is invented to fill a gap.
         </p>
       </main>
       <Footer />

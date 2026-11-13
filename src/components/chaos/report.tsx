@@ -1,13 +1,23 @@
-import { Asterisk, Flame, Coffee, Cable, Headphones, Award } from "lucide-react";
+import { Asterisk, Flame, Coffee, Award, ScanLine } from "lucide-react";
+
+type ReportProps = {
+  roast: string;
+  score?: number;
+  mode?: string;
+  objectCount?: number;
+  objectNames?: string[];
+  textLines?: string[];
+};
+
 export function Report({
   roast,
   score = 94,
   mode = "roast",
-}: {
-  roast: string;
-  score?: number;
-  mode?: string;
-}) {
+  objectCount = 0,
+  objectNames = [],
+  textLines = [],
+}: ReportProps) {
+  const highlights = objectNames.slice(0, 4);
   return (
     <article className="report-card">
       <div className="report-top">
@@ -15,7 +25,9 @@ export function Report({
         <Asterisk />
       </div>
       <div className="report-meta">
-        <span>17 OBJECTS DETECTED · DEMO</span>
+        <span>
+          {objectCount} OBJECT{objectCount === 1 ? "" : "S"} DETECTED · ON-DEVICE
+        </span>
         <span>{mode === "find" ? "FIND THE OBJECT" : "OBJECT ROAST"}</span>
       </div>
       <div className="report-score">
@@ -30,14 +42,30 @@ export function Report({
         <span className="eyebrow">THE VERDICT</span>
         <blockquote>“{roast}”</blockquote>
       </div>
+      {highlights.length > 0 ? (
+        <div className="report-objects">
+          <span className="tiny">WHAT MIRAGE SAW</span>
+          <div>
+            {highlights.map((name, index) => (
+              <span key={`${name}-${index}`} className="report-chip">
+                {name}
+              </span>
+            ))}
+            {textLines.length > 0 ? (
+              <span className="report-chip">
+                <ScanLine size={11} /> {textLines.length} text line
+                {textLines.length === 1 ? "" : "s"}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <div className="report-award">
         <span>
           <Award /> CERTIFIED CHAOS
         </span>
         <div>
           <Coffee />
-          <Cable />
-          <Headphones />
         </div>
       </div>
       <div className="report-bottom">

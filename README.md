@@ -1,76 +1,115 @@
-<div align="center">
-
 # OBJECT CHAOS
 
 **Your world. Your objects. Your chaos.**
 
-A free browser party game that turns the mess on your desk into something worth laughing at.
+Upload a photo. A 21.6 MB vision model runs **on your device**, finds the objects in it, and a party game breaks out. No account, no upload, no inference bill.
 
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](#built-with)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](#built-with)
-[![TanStack Start](https://img.shields.io/badge/TanStack-Start-FF4154)](#built-with)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](#built-with)
+- **Live:** https://site-6c8bf6f8cd9e484683219b608ee86525.freebuff.page
+- **Repo:** https://github.com/g0GobliN/object-chaos
 
-</div>
+## What it does
 
-![OBJECT CHAOS — an ordinary desk, extraordinary problems](src/assets/chaos-desk.jpg)
+1. You pick a photo (file, camera, or the built-in sample desk).
+2. The image is downscaled in the browser (longest edge 768 px) and handed to Cactus's **Mirage** vision model running in WebAssembly inside a Web Worker.
+3. The model returns structured JSON: objects with boxes, confidence, position, colour/material descriptions, plus OCR text lines.
+4. An adapter turns that into the app's own schema and the two games run off the result:
+   - **Find the Object** — three timed challenges built from attributes that actually exist in the photo ("Find something made of paper", "Find something in the top half", "Find the largest object"). Only generated when they are answerable, 100 points per correct answer.
+   - **Object Roast** — deterministic local templates keyed to detected names, attributes, duplicates and counts produce a chaos score and a verdict. No LLM involved.
+5. Every round produces a report page with a score, the verdict and the detected objects, plus a **1080×1080 PNG card** drawn on a canvas and a **Web Share** fallback to clipboard.
 
-## Ordinary objects. Extraordinary nonsense.
+The photo never leaves the browser. There is no backend, no database and no image storage — the deployed artifact is static files.
 
-Your desk has a story. It is not a good story, but it is a story: the mug that has survived
-three economic crises, the cable pile quietly forming a government, the plant that is the only
-thing in the room with its life together.
+## Architecture
 
-OBJECT CHAOS takes a photo of all that and turns it into a game.
-
-No account. No download. No setup. Just point it at your surroundings and start finding things.
-
-## Three ways to make a mess
-
-| Game | What happens | Result |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| 🔍 **Find the object**  | A challenge appears — something red, something you can drink from — and the clock is already running. Three rounds, sharp eyes required. | Score up to 300        |
-| 🔥 **Object roast**     | Your surroundings get a personality, and the personality is unimpressed. The verdict arrives whether you asked for it or not.            | Chaos score out of 100 |
-| 📋 **The chaos report** | Every round ends in an official, deeply unofficial report card. Share it, or download it and put it in the group chat.                   | Shareable card         |
-
-## How it works
-
-1. **Drop a photo** — your desk, your kitchen counter, that corner you keep meaning to deal with.
-2. **Let the chaos scan** — objects get highlighted and turned into challenges.
-3. **Play and share** — find things, get roasted, hand out the results.
-
-## Honest by design
-
-OBJECT CHAOS is a frontend demo. The detections are fixed demo data, not machine vision, and
-your photo is never uploaded anywhere — it is read in your own browser and stays there.
-Nothing is inferred, nothing is sent, and nothing is stored.
-
-That also means it is fast, private, and works offline once the page has loaded.
-
-## Built with
-
-- [React 19](https://react.dev) + [TypeScript](https://www.typescriptlang.org)
-- [TanStack Start](https://tanstack.com/start) and [TanStack Router](https://tanstack.com/router) for SSR and file-based routing
-- [Vite](https://vite.dev) and [Nitro](https://nitro.build) for the build and server bundle
-- [Tailwind CSS 4](https://tailwindcss.com) with a custom dark arcade design system
-- [shadcn/ui](https://ui.shadcn.com) primitives, [lucide](https://lucide.dev) icons
-- [Vitest](https://vitest.dev) for the game-logic tests
-
-## Run it locally
-
-```sh
-bun install
-bun run dev
+```
+React 19 + TypeScript + TanStack Start (SPA build) + Tailwind CSS 4
+└─ /play            upload / camera / sample → analyse → play
+   /result          score, verdict, PNG card, share
+   public/mirage/worker.js   classic Web Worker
+      importScripts("/cactus/cactus.js")   vendored runtime, 99 KB
+      fetch https://huggingface.co/Cactus-Compute/mirage/resolve/main/mirage.cact
+        → Cache Storage ("mirage-model") 21.6 MB, downloaded once
+      _cactus_load() → _cactus_describe(rgb, w, h, options, ...)
+   src/lib/mirage/client.ts    singleton worker, serialised requests, progress events
+   src/lib/mirage/adapter.ts   raw Mirage JSON → DetectedObject[]
+   src/lib/game/challenges.ts  evaluable challenges only
+   src/lib/game/roasts.ts      deterministic roast + chaos score
 ```
 
-Then open <http://localhost:3000>.
+Inference request: `sections: ["objects","text"]`, `fields: ["bbox","score","position","description"]`, `max_objects: 20`. Masks are deliberately not requested (not needed by either game, and they cost time).
 
-```sh
-bun run build     # production build
-bun run preview   # preview the build
-bun run test      # game-logic and routing tests
+**One detail worth knowing:** Mirage returns bounding boxes on a fixed **0–1000 grid**, not in input pixels — the same photo analysed at 768 px and 1536 px yields identical numbers. `MIRAGE_GRID` in `src/lib/mirage/adapter.ts` normalises against that constant; dividing by image width/height (the intuitive guess) shifts every box. There is a regression test that asserts both resolutions give identical boxes.
+
+## Running locally
+
+```bash
+npm install
+npm run dev      # http://localhost:3000
+npm test         # 16 unit tests
+npm run lint
+npm run build    # SPA build → .output/public (+ .output/server for Node)
 ```
 
----
+The first "Try the sample" downloads 21.6 MB of model into Cache Storage; later runs are instant to start.
 
-A little mess. A lot of possibilities.
+## Deployment
+
+The app ships as a static SPA, so any static host works. This repo includes a Worker manifest for the hosting used here:
+
+```bash
+npm run build
+cp .output/public/_shell.html .output/public/index.html   # SPA shell as the entry document
+rm -rf dist-static && cp -r .output/public dist-static
+# deploy dist-static with deploy.json (a Worker that only calls env.ASSETS.fetch)
+```
+
+The same directory deploys unchanged to Cloudflare Pages (`dist-static` as the output directory) or any bucket/CDN with SPA fallback to `index.html`.
+
+## Benchmarks
+
+Measured on a Windows 11 desktop, Chromium 130 (Electron), 16 logical cores, 8 GB device memory, no cross-origin isolation (the runtime does not need `SharedArrayBuffer`).
+
+| Image (longest edge) | Objects | OCR lines | Inference |
+| --- | --- | --- | --- |
+| Desk, 1536 px (Node harness) | 10 | 2 | 4.3 s |
+| Desk, 768 px (Node harness) | 8 | – | 4.8 s |
+| Bus, 768 px | 7 | 6 | 2.7 s |
+| Portrait, 768 px | 4 | 0 | 1.8 s |
+| Dog, 768 px | 4 | 0 | 1.9 s |
+| Desk, 768 px (in browser, dev build) | 7 | 0 | 4.0–4.5 s |
+| Desk, 768 px (in browser, static build) | 7 | 0 | 4.6 s |
+
+Weights: 21.6 MB (`mirage.cact`), cached in Cache Storage. Runtime: 99 KB JS + 1.2 MB WASM, served from the site. App JS: ~350 KB (≈90 KB gzipped) plus fonts. Total first visit ≈ 2.2 MB of app + 21.6 MB of model; every later visit reuses the cached model.
+
+Peak JS heap after a round was ~7 MB; the model lives in the WASM heap, which the browser does not expose to `performance.memory`, so total runtime memory is not measured precisely here.
+
+## What works, and what does not
+
+Verified by hand on the deployed URL and locally:
+
+- Upload, camera capture (where `getUserMedia` exists), sample photo.
+- Real Mirage inference in the browser on the public site — 7 objects on the sample desk, boxes aligned to the image.
+- Both games end to end, scoring, feedback, restart.
+- `/result` with real object chips and verdict, 1080×1080 PNG card (103 KB), Web Share with clipboard fallback.
+
+Known limitations:
+
+- **Accuracy is modest.** On the sample desk Mirage finds keyboards, cups, a desk, a notebook and a mousepad correctly, but it returns duplicate boxes for the same object (merged by the adapter when they overlap), misses small items, and mislabels some things (a dog was labelled "cat"). Confidence is usually 0.3–0.75, so labels are shown honestly as percentages instead of being treated as ground truth.
+- **Challenges depend on the photo.** A scene with fewer than two objects cannot start a round; challenges are only drawn from attributes that exist (colour, material, position, size, category, OCR, duplicates), so variety scales with how much the model described.
+- **768 px downscale.** Faster and lighter, at the cost of small-object recall. Higher resolutions mostly add latency.
+- **First load needs the network** to fetch the model from Hugging Face (CORS is enabled there). After that it is cached; there is no offline-first app shell.
+- **Browsers tested:** Chromium 130 desktop only. Firefox, Safari/iOS and Android Chrome were not tested on real devices — the runtime needs WebAssembly and Cache Storage; if either is missing the page reports that local AI is unavailable rather than calling a server.
+- **Mobile performance** is expected to be considerably slower than desktop; not measured.
+- Roasts are templates, not generated text, so they can repeat between similar photos.
+
+## Privacy
+
+Image data stays in the page: it is drawn to a canvas, passed as pixels to a Worker in the same origin, and never sent anywhere. The only network requests are the static assets, the fonts and the model download. Results live in `sessionStorage` for the result page and disappear when the tab closes.
+
+## Credits and licenses
+
+- **Mirage** model and **Cactus** WASM runtime — Cactus Compute, Apache-2.0. Runtime vendored in `public/cactus/`; license text in `LICENSE-APACHE-2.0.txt` and `THIRD_PARTY_NOTICES.md`.
+- Mirage model card: https://huggingface.co/Cactus-Compute/mirage
+- Cactus: https://github.com/cactus-compute/cactus
+
+The app code in this repository is Apache-2.0.

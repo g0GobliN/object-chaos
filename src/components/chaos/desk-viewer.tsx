@@ -1,68 +1,96 @@
-import desk from "@/assets/chaos-desk.jpg";
-import { objects } from "@/lib/chaos";
-import { Button } from "@/components/ui/button";
 import { ScanLine, Maximize2 } from "lucide-react";
-export function DeskViewer({
-  compact = false,
-  interactive = false,
-  image,
-  selected,
-  onSelect,
-}: {
-  compact?: boolean;
-  interactive?: boolean;
+
+import { Button } from "@/components/ui/button";
+import type { DetectedObject } from "@/lib/mirage/adapter";
+
+const TONES = ["violet", "orange", "lime"] as const;
+
+type DeskViewerProps = {
   image?: string | undefined;
+  objects?: DetectedObject[];
   selected?: string | undefined;
   onSelect?: (id: string) => void;
-}) {
-  const shown = compact ? objects.slice(0, 4) : objects;
+  interactive?: boolean;
+  compact?: boolean;
+  inferenceMs?: number | undefined;
+  caption?: string;
+};
+
+export function DeskViewer({
+  image,
+  objects = [],
+  selected,
+  onSelect,
+  interactive = false,
+  compact = false,
+  inferenceMs,
+  caption,
+}: DeskViewerProps) {
+  const shown = compact ? objects.slice(0, 6) : objects;
+  const total = objects.length;
+
   return (
     <div className={`desk-viewer ${compact ? "compact" : ""}`}>
       <div className="viewer-top">
         <span>
-          <span className="status-dot" />{" "}
-          {image ? "YOUR PHOTO · DEMO DETECTIONS" : "LIVE PREVIEW · DESK_001.JPG"}
+          <span className="status-dot" /> {caption ?? (image ? "YOUR PHOTO" : "SAMPLE DESK")}
         </span>
         <span>
-          <ScanLine size={13} /> OBJECT VISION
+          <ScanLine size={13} /> MIRAGE · ON-DEVICE
         </span>
       </div>
       <div className="desk-photo">
-        <img
-          src={image || desk}
-          alt="A messy desk with a coffee mug, headphones, cables, keyboard, notebook and plant"
-          width={1536}
-          height={1024}
-        />
-        {shown.map((o) => (
+        {image ? (
+          <img
+            src={image}
+            alt="The photo being analysed"
+            width={1536}
+            height={1024}
+            className="desk-photo-img"
+          />
+        ) : (
+          <div className="desk-photo-empty">
+            <ScanLine size={28} />
+            <span>Your photo lands here</span>
+          </div>
+        )}
+        {shown.map((object, index) => (
           <Button
-            key={o.id}
+            key={object.id}
             variant="object"
-            aria-label={o.name}
+            aria-label={`${object.name} (${Math.round(object.confidence * 100)}% confident)`}
+            aria-pressed={selected === object.id}
             disabled={!interactive}
-            className={`detection-box box-${o.tone} ${selected === o.id ? "selected" : ""}`}
-            style={{ left: `${o.x}%`, top: `${o.y}%`, width: `${o.w}%`, height: `${o.h}%` }}
-            onClick={() => onSelect?.(o.id)}
+            className={`detection-box box-${TONES[index % TONES.length]} ${
+              selected === object.id ? "selected" : ""
+            }`}
+            style={{
+              left: `${object.box.x * 100}%`,
+              top: `${object.box.y * 100}%`,
+              width: `${object.box.width * 100}%`,
+              height: `${object.box.height * 100}%`,
+            }}
+            onClick={() => onSelect?.(object.id)}
           >
             <span className="detection-label">
-              {o.label}
-              <span> {o.id === "cable" ? "??" : "99%"}</span>
+              {object.name}
+              <span>{Math.round(object.confidence * 100)}%</span>
             </span>
           </Button>
         ))}
-        <div className="scan-caption">
-          <ScanLine size={14} /> SCANNING YOUR CHAOS<span className="scan-dots">...</span>
-        </div>
         <span className="photo-corner">
           <Maximize2 size={15} />
         </span>
       </div>
       <div className="viewer-bottom">
         <span>
-          <span className="status-dot" /> DEMO DETECTIONS
+          <span className="status-dot" /> REAL DETECTIONS
         </span>
         <span>
-          {compact ? "12" : "10"} OBJECTS FOUND <span className="text-primary">✦</span>
+          {total} OBJECT{total === 1 ? "" : "S"} FOUND <span className="text-primary">✦</span>
+          {typeof inferenceMs === "number" && inferenceMs > 0 ? (
+            <span className="viewer-timing"> {Math.round(inferenceMs)} ms</span>
+          ) : null}
         </span>
       </div>
     </div>

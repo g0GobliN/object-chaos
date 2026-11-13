@@ -74,7 +74,7 @@ export function Footer() {
       </div>
       <div className="footer-bottom">
         <span>© 2026 OBJECT CHAOS</span>
-        <span>Frontend demo · Your photos stay on your device.</span>
+        <span>Local AI · Your photos stay on your device.</span>
         <span>
           A little mess. A lot of possibilities. <Asterisk size={14} />
         </span>

@@ -4,7 +4,7 @@ import { Header, Footer } from "@/components/chaos/shell";
 import { DeskViewer } from "@/components/chaos/desk-viewer";
 import { HowSection, GamesSection } from "@/components/chaos/landing-sections";
 import { Button } from "@/components/ui/button";
-import { pageHead } from "@/lib/chaos";
+import { SAMPLE_ANALYSIS, pageHead } from "@/lib/chaos";
 export const Route = createFileRoute("/")({
   head: () =>
     pageHead(
@@ -34,13 +34,13 @@ function Index() {
               </span>
             </h1>
             <p className="hero-description">
-              Upload a photo. Discover what's hiding in plain sight.
-              <br className="desktop-break" /> Then let the chaos begin.
+              Upload a photo. Let AI inspect your surroundings.
+              <br className="desktop-break" /> Discover what happens next.
             </p>
             <div className="hero-actions">
               <Button asChild size="hero">
                 <Link to="/play" search={{ mode: "find" }}>
-                  Start creating chaos <ArrowUpRight />
+                  Start Creating Chaos <ArrowUpRight />
                 </Link>
               </Button>
               <Button asChild variant="ghost" size="hero">
@@ -58,9 +58,14 @@ function Index() {
             <div className="hero-image-note">
               ordinary desk. extraordinary problems.<span>↘</span>
             </div>
-            <DeskViewer compact />
+            <DeskViewer
+              compact
+              objects={SAMPLE_ANALYSIS.objects}
+              inferenceMs={SAMPLE_ANALYSIS.inferenceMs}
+              caption="EXAMPLE ANALYSIS · SAMPLE DESK"
+            />
             <div className="floating-found">
-              <ScanIcon /> 12 OBJECTS FOUND
+              <ScanIcon /> {SAMPLE_ANALYSIS.objects.length} OBJECTS FOUND
             </div>
             <div className="floating-chaos">
               <Asterisk size={16} /> CHAOS LEVEL: HIGH

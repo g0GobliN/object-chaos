@@ -1729,6 +1729,170 @@
     font-size: 72px;
   }
 }
+/* Photo surfaced by the local analysis pipeline */
+.desk-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.desk-photo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 100%;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.desk-photo-empty svg {
+  color: var(--primary);
+}
+.viewer-timing {
+  color: var(--muted-foreground);
+  margin-left: 8px;
+}
+
+/* Local inference progress */
+.analysis-progress {
+  margin-top: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--secondary);
+  padding: 16px 18px;
+}
+.analysis-progress > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.analysis-progress > div:first-child strong {
+  margin-left: auto;
+  font-family: var(--font-display);
+  color: var(--primary);
+}
+.analysis-progress p {
+  color: var(--muted-foreground);
+  font-size: 10px;
+  margin: 10px 0 0;
+}
+.progress-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 4px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+.progress-track > span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  transition: width 200ms ease-out;
+}
+.play-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in oklab, var(--chaos-orange) 45%, transparent);
+  border-radius: 6px;
+  color: var(--chaos-orange);
+  font-size: 11px;
+  line-height: 1.7;
+}
+.play-error svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.upload-actions > button {
+  font-size: 11px;
+}
+
+/* Camera capture */
+.camera-stage {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--secondary);
+  overflow: hidden;
+  box-shadow: var(--shadow-photo);
+}
+.camera-video {
+  width: 100%;
+  aspect-ratio: 1.5;
+  object-fit: cover;
+  display: block;
+  background: var(--background);
+}
+.camera-actions {
+  display: flex;
+  gap: 8px;
+  padding: 14px;
+}
+
+/* Game panel states */
+.panel-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 220px;
+  text-align: center;
+  padding: 20px;
+}
+.panel-loading p {
+  font-family: var(--font-display);
+  font-size: 17px;
+  margin: 0;
+}
+.panel-loading small {
+  color: var(--muted-foreground);
+  font-size: 10px;
+  line-height: 1.7;
+}
+.roast-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-block: 20px;
+}
+.roast-lines .live-roast {
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+/* Report additions */
+.report-objects {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.report-objects > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.report-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 9px;
+  color: var(--muted-foreground);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

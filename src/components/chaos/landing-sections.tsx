@@ -64,7 +64,9 @@ export function HowSection() {
             </span>
           </div>
           <h3>Let the chaos scan</h3>
-          <p>Objects get identified, highlighted and turned into playable challenges.</p>
+          <p>
+            A 22 MB vision model finds the objects on your device and turns them into challenges.
+          </p>
         </article>
         <article className="step-card">
           <div className="step-top">
