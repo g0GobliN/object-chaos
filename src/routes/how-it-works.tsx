@@ -37,8 +37,9 @@ function How() {
             found, so small objects are not missed. It returns names, boxes and confidence scores.
           </li>
           <li>
-            <strong>The game uses that list.</strong> Challenges or a roast are generated in the tab
-            from those objects, and the result card is drawn locally.
+            <strong>The game uses that list.</strong> Anything the model is less than 45% sure of is
+            treated as a guess and hidden — that is where “teapot” on a wall clock comes from. The
+            rest become challenges or a roast, and the result card is drawn locally.
           </li>
         </ol>
 

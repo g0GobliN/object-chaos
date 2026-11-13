@@ -189,7 +189,7 @@ function Play() {
 
     if (result.objects.length === 0) {
       throw new Error(
-        "Mirage could not find any objects in that photo. Try one with more stuff in it.",
+        "Mirage could not find anything in that photo it was confident about. Try a brighter, closer shot with more stuff in it.",
       );
     }
 

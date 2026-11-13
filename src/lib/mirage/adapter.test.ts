@@ -76,6 +76,20 @@ describe("adaptMirage", () => {
     expect(analysis.objects[0]?.confidence).toBe(0.91);
   });
 
+  it("hides low-confidence guesses instead of labelling them as objects", () => {
+    const analysis = adaptMirage(
+      inference([
+        { id: 1, name: "teapot", score: 0.44, bbox: [700, 100, 800, 220] },
+        { id: 2, name: "chair", score: 0.54, bbox: [100, 400, 400, 900] },
+      ]),
+      768,
+      512,
+      1,
+    );
+
+    expect(analysis.objects.map((object) => object.name)).toEqual(["chair"]);
+  });
+
   it("drops the scene-sized box so it cannot swallow every tap", () => {
     const analysis = adaptMirage(
       inference([

@@ -59,6 +59,12 @@ const BACKGROUND_NAMES = new Set([
  */
 const MAX_TAPPABLE_AREA = 0.6;
 
+/**
+ * Below this the model is guessing: a wall clock comes back as "teapot", a
+ * bench as "chair". Those boxes are hidden rather than shown as facts.
+ */
+export const MIN_CONFIDENCE = 0.45;
+
 function clean(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
@@ -198,9 +204,13 @@ export function adaptMirage(
   };
 }
 
-/** Drops scene-sized and background detections, then gives the survivors fresh ids. */
+/**
+ * Drops guesses, scene-sized boxes and background detections, then gives the
+ * survivors fresh ids.
+ */
 function finaliseObjects(kept: DetectedObject[]): DetectedObject[] {
   return kept
+    .filter((object) => object.confidence >= MIN_CONFIDENCE)
     .filter((object) => object.area < MAX_TAPPABLE_AREA)
     .filter((object) => !BACKGROUND_NAMES.has(object.name.toLowerCase()))
     .map((object, index) => ({ ...object, id: `object_${index + 1}` }));
