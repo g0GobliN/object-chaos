@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 
 import { Header, Footer } from "@/components/chaos/shell";
@@ -58,6 +58,14 @@ function Privacy() {
           Object names, rough positions, confidence scores and short attributes such as colour and
           material. If the model is unsure it still reports a low confidence, and the game treats
           that as a maybe. Nothing is invented to fill a gap.
+        </p>
+
+        <h2>Questions about your data?</h2>
+        <p>
+          There is no database to query and no account to delete — closing the tab is the whole
+          cleanup. If something still worries you, write to{" "}
+          <a href="mailto:hello@vishalgurung.com.np">hello@vishalgurung.com.np</a>. The short
+          version of the rules of the road lives on the <Link to="/terms">ground rules page</Link>.
         </p>
       </main>
       <Footer />

@@ -838,8 +838,9 @@
 }
 .footer-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 40px;
   padding-bottom: 30px;
 }
 .footer-top .logo {
@@ -854,11 +855,44 @@
   color: var(--muted-foreground);
   margin-top: 9px;
 }
-.footer-top nav {
+.footer-brand {
+  max-width: 300px;
+}
+.footer-note {
+  max-width: 280px;
+  line-height: 1.7;
+}
+.footer-links {
   display: flex;
-  gap: 24px;
+  flex-wrap: wrap;
+  gap: 56px;
+}
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
   font-size: 10px;
   color: var(--muted-foreground);
+}
+.footer-col h2 {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--foreground);
+  margin-bottom: 3px;
+}
+.footer-col a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.footer-col svg {
+  color: var(--muted-foreground);
+}
+.footer-col a:hover svg {
+  color: var(--primary);
 }
 .footer-bottom {
   border-top: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
@@ -1567,8 +1601,15 @@
     gap: 23px;
     flex-direction: column;
   }
-  .footer-top nav {
-    gap: 27px;
+  .footer-links {
+    gap: 32px;
+    width: 100%;
+  }
+  .footer-col {
+    flex: 1 1 120px;
+  }
+  .footer-note {
+    max-width: none;
   }
   .footer-bottom {
     flex-wrap: wrap;
