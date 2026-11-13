@@ -1,6 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Check, CircleAlert, Eye, RotateCcw, Sparkles, Upload, X } from "lucide-react";
+import {
+  Camera,
+  Check,
+  CircleAlert,
+  Eye,
+  RotateCcw,
+  Sparkles,
+  Trophy,
+  Upload,
+  X,
+} from "lucide-react";
 
 import { DeskViewer } from "@/components/chaos/desk-viewer";
 import { Footer, Header } from "@/components/chaos/shell";
@@ -10,6 +20,13 @@ import { adaptMirage, mergeAnalyses, type Analysis } from "@/lib/mirage/adapter"
 import { buildChallenges, type Challenge } from "@/lib/game/challenges";
 import { buildRoast, type Roast } from "@/lib/game/roasts";
 import { saveResult } from "@/lib/result-store";
+import {
+  loadBoard,
+  rememberBoardName,
+  savedBoardName,
+  submitScore,
+  type LeaderboardEntry,
+} from "@/lib/leaderboard";
 
 export const Route = createFileRoute("/play")({
   validateSearch: (search: Record<string, unknown>): { mode?: "find" | "roast" } => ({
@@ -86,6 +103,10 @@ function Play() {
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | "skipped" | undefined>();
   const [seconds, setSeconds] = useState(ROUND_SECONDS);
   const [roastData, setRoastData] = useState<Roast | null>(null);
+  const [board, setBoard] = useState<LeaderboardEntry[] | null>(null);
+  const [boardName, setBoardName] = useState("");
+  const [boardState, setBoardState] = useState<"idle" | "saving" | "saved">("idle");
+  const [boardError, setBoardError] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -127,6 +148,25 @@ function Play() {
     if (mode !== "find" || stage !== "ready" || complete) return;
     if (seconds === 0 && !feedback) setFeedback("skipped");
   }, [mode, stage, complete, seconds, feedback]);
+
+  useEffect(() => {
+    setBoardName(savedBoardName());
+  }, []);
+
+  useEffect(() => {
+    if (!complete || mode !== "find") return;
+    let cancelled = false;
+    loadBoard("find")
+      .then((entries) => {
+        if (!cancelled) setBoard(entries);
+      })
+      .catch(() => {
+        if (!cancelled) setBoard(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [complete, mode]);
 
   const analyse = useCallback(async (bitmap: ImageBitmap) => {
     // close() detaches the bitmap and zeroes its size, so read the dimensions first.
@@ -307,6 +347,21 @@ function Play() {
     setFeedback("skipped");
   }, [challenge, feedback]);
 
+  const saveToBoard = useCallback(async () => {
+    if (mode !== "find" || score <= 0) return;
+    const name = boardName.trim();
+    setBoardState("saving");
+    setBoardError("");
+    try {
+      setBoard(await submitScore(name, score, "find"));
+      setBoardState("saved");
+      rememberBoardName(name);
+    } catch (caught) {
+      setBoardState("idle");
+      setBoardError(caught instanceof Error ? caught.message : "Could not save that score");
+    }
+  }, [boardName, mode, score]);
+
   const next = useCallback(() => {
     setFeedback(undefined);
     setSelected(undefined);
@@ -327,6 +382,8 @@ function Play() {
     setRound(0);
     setScore(0);
     setSeconds(ROUND_SECONDS);
+    setBoardState("idle");
+    setBoardError("");
   }, []);
 
   const finish = useCallback(() => {
@@ -483,6 +540,64 @@ function Play() {
                     </div>
                   </div>
                   <p className="g-challenge">Round complete</p>
+
+                  {mode === "find" ? (
+                    <div className="g-board">
+                      <p className="g-board-title">
+                        <Trophy size={13} /> leaderboard
+                      </p>
+                      {boardState === "saved" ? (
+                        <p className="w-feedback">
+                          <Check size={13} /> On the board as {boardName.trim()}.
+                        </p>
+                      ) : (
+                        <form
+                          className="g-board-form"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void saveToBoard();
+                          }}
+                        >
+                          <input
+                            className="g-board-input"
+                            value={boardName}
+                            maxLength={16}
+                            placeholder="your name"
+                            aria-label="Name for the leaderboard"
+                            onChange={(event) => setBoardName(event.target.value)}
+                          />
+                          <button
+                            type="submit"
+                            className="w-play"
+                            disabled={
+                              boardState === "saving" || boardName.trim().length < 2 || score === 0
+                            }
+                          >
+                            {boardState === "saving" ? "saving…" : "put me on the board"}
+                          </button>
+                        </form>
+                      )}
+                      {boardError ? (
+                        <p className="w-feedback bad" role="alert">
+                          {boardError}
+                        </p>
+                      ) : null}
+                      {board && board.length > 0 ? (
+                        <ol className="g-board-list">
+                          {board.map((entry, index) => (
+                            <li key={`${entry.name}-${entry.score}-${entry.createdAt}-${index}`}>
+                              <span className="g-board-rank">{index + 1}</span>
+                              <span className="g-board-name">{entry.name}</span>
+                              <span className="g-board-score">{entry.score}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      ) : board ? (
+                        <p className="w-small">Nobody has finished a round yet. Be the first.</p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   <div className="w-actions">
                     <button type="button" className="w-play w-play-lg" onClick={finish}>
                       see my report

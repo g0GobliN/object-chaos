@@ -47,6 +47,14 @@ function Privacy() {
           temporary and reloading the page resets it. The result card is generated in your browser.
         </p>
 
+        <h2>The leaderboard is the only thing stored.</h2>
+        <p>
+          Saving a score is optional. If you use it, the name you type and your score are stored on
+          this site's database so other players can see them — nothing else, and never your photo or
+          the objects the model found. Your name is remembered in this browser so you do not retype
+          it. Ask by email and a score is deleted.
+        </p>
+
         <h2>Sharing is your choice.</h2>
         <p>
           Sharing sends the report text to an app you choose, or copies it to your clipboard.
@@ -62,10 +70,10 @@ function Privacy() {
 
         <h2>Questions about your data?</h2>
         <p>
-          There is no database to query and no account to delete — closing the tab is the whole
-          cleanup. If something still worries you, write to{" "}
-          <a href="mailto:hello@vishalgurung.com.np">hello@vishalgurung.com.np</a>. The short
-          version of the rules of the road lives on the <Link to="/terms">ground rules page</Link>.
+          Closing the tab clears the round. The one exception is a leaderboard entry you chose to
+          submit — write to <a href="mailto:hello@vishalgurung.com.np">hello@vishalgurung.com.np</a>{" "}
+          with the name and score and it is removed. The short version of the rules of the road
+          lives on the <Link to="/terms">ground rules page</Link>.
         </p>
       </main>
       <Footer />
