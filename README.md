@@ -27,7 +27,7 @@ No account. No download. No setup. Just point it at your surroundings and start 
 
 ## Three ways to make a mess
 
-|                         |                                                                                                                                          |                        |
+| Game | What happens | Result |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
 | 🔍 **Find the object**  | A challenge appears — something red, something you can drink from — and the clock is already running. Three rounds, sharp eyes required. | Score up to 300        |
 | 🔥 **Object roast**     | Your surroundings get a personality, and the personality is unimpressed. The verdict arrives whether you asked for it or not.            | Chaos score out of 100 |
