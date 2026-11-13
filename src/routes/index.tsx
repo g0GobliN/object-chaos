@@ -60,7 +60,7 @@ function Index() {
           <Link to="/play" search={{ mode: "find" }} className="hero-tile">
             <span className="hero-tile-num">Play</span>
             <span className="hero-tile-title">Find the object</span>
-            <p>Three challenges, twenty seconds each. Tap the right thing on the photo, 300 max.</p>
+            <p>Three challenges, twenty seconds each. Tap the right thing fast: 600 max.</p>
           </Link>
           <Link to="/play" search={{ mode: "roast" }} className="hero-tile">
             <span className="hero-tile-num">Play</span>

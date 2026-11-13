@@ -28,8 +28,9 @@ function Games() {
         <h2>Find the object</h2>
         <p>
           Three challenges, twenty seconds each. The model&apos;s confidence does not help you here:
-          it names a thing, you tap it. +100 for the right tap, nothing for a wrong one, 300 is a
-          clean sweep.
+          it names a thing, you tap it. +150 for the right tap, +50 more if you answer with time to
+          spare, nothing for a wrong one. 600 is a clean sweep, and the last few seconds make the
+          right boxes glow.
         </p>
         <p>
           If the model is being weird, <em>Show me what counts</em> reveals the answer for no

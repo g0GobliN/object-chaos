@@ -46,6 +46,11 @@ const MAX_BYTES = 15 * 1024 * 1024;
 const MIN_IMAGE_EDGE = 64;
 const MAX_IMAGE_EDGE = 12000;
 const ROUND_SECONDS = 20;
+const BASE_POINTS = 150;
+const QUICK_BONUS = 50;
+const QUICK_SECONDS = 10;
+const HINT_SECONDS = 8;
+const MAX_ROUND_POINTS = BASE_POINTS + QUICK_BONUS;
 const DETAIL_EDGE = 1152;
 const MIN_DETAIL_EDGE = 320;
 const SEEN_KEY = "objectchaos:seen-challenges";
@@ -98,6 +103,7 @@ function Play() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
+  const [earned, setEarned] = useState(0);
   const [selected, setSelected] = useState<string | undefined>();
   const [tapped, setTapped] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | "skipped" | undefined>();
@@ -334,10 +340,13 @@ function Play() {
     (id: string) => {
       if (!challenge || feedback === "correct" || seconds === 0) return;
       const correct = challenge.answerIds.includes(id);
+      // Answering with time to spare is worth extra: the clock is part of the game.
+      const points = correct ? BASE_POINTS + (seconds > QUICK_SECONDS ? QUICK_BONUS : 0) : 0;
       setSelected(id);
       setTapped(analysis?.objects.find((object) => object.id === id)?.name ?? null);
+      setEarned(points);
       setFeedback(correct ? "correct" : "incorrect");
-      if (correct) setScore((value) => value + 100);
+      if (correct) setScore((value) => value + points);
     },
     [analysis, challenge, feedback, seconds],
   );
@@ -365,6 +374,7 @@ function Play() {
   const next = useCallback(() => {
     setFeedback(undefined);
     setSelected(undefined);
+    setEarned(0);
     setSeconds(ROUND_SECONDS);
     setRound((value) => value + 1);
   }, []);
@@ -381,6 +391,7 @@ function Play() {
     setError("");
     setRound(0);
     setScore(0);
+    setEarned(0);
     setSeconds(ROUND_SECONDS);
     setBoardState("idle");
     setBoardError("");
@@ -454,6 +465,15 @@ function Play() {
                   feedback !== "correct" &&
                   feedback !== "skipped"
                 }
+                hintIds={
+                  mode === "find" &&
+                  stage === "ready" &&
+                  !feedback &&
+                  seconds > 0 &&
+                  seconds <= HINT_SECONDS
+                    ? challenge?.answerIds
+                    : undefined
+                }
                 inferenceMs={
                   stage === "ready" ? analysis?.inferenceMs : SAMPLE_ANALYSIS.inferenceMs
                 }
@@ -470,7 +490,7 @@ function Play() {
                 <p className="g-attract-title">{mode === "find" ? "Press start" : "Get roasted"}</p>
                 <p className="g-attract-note">
                   {mode === "find"
-                    ? "3 rounds · 20 seconds each · 300 max"
+                    ? `3 rounds · 20 seconds each · ${MAX_ROUND_POINTS * 3} max`
                     : "1 verdict · scored out of 100"}
                 </p>
                 <div className="g-attract-actions">
@@ -532,7 +552,7 @@ function Play() {
                     </div>
                     <div>
                       <span className="g-label">Out of</span>
-                      <span className="g-num">{challenges.length * 100}</span>
+                      <span className="g-num">{challenges.length * MAX_ROUND_POINTS}</span>
                     </div>
                     <div>
                       <span className="g-label">Rounds</span>
@@ -622,6 +642,11 @@ function Play() {
                     <div>
                       <span className="g-label">Score</span>
                       <span className="g-num">{score}</span>
+                      {feedback === "correct" && earned > 0 ? (
+                        <span key={`${round}-${earned}`} className="g-pop" aria-hidden="true">
+                          +{earned}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 
@@ -642,7 +667,7 @@ function Play() {
                       {feedback === "incorrect" ? <X size={13} /> : null}
                       {feedback === "skipped" ? <Eye size={13} /> : null}{" "}
                       {feedback === "correct"
-                        ? "+100. Sharp eyes."
+                        ? `+${earned}. ${earned > BASE_POINTS ? "Beat the clock." : "Sharp eyes."}`
                         : feedback === "incorrect"
                           ? `Not that one — you tapped the ${tapped ?? "background"}. Keep looking?`
                           : seconds === 0
@@ -661,7 +686,9 @@ function Play() {
                         {round + 1 >= challenges.length ? "finish round" : "next challenge"}
                       </button>
                     )}
-                    <span className="w-small">+100 per correct tap</span>
+                    <span className="w-small">
+                      +{BASE_POINTS} a tap · +{QUICK_BONUS} if you beat the clock
+                    </span>
                   </div>
                 </>
               )
@@ -717,7 +744,7 @@ function Play() {
                 <p className="g-challenge">{mode === "find" ? "Find it" : "Take it"}</p>
                 <p className="w-small">
                   {mode === "find"
-                    ? "The model names a thing on your photo. Tap it before the clock runs out: +100 for a hit, nothing for a miss, 300 total."
+                    ? `The model names a thing on your photo. Tap it before the clock runs out: +${BASE_POINTS} for a hit, +${QUICK_BONUS} more if you answer with time to spare, nothing for a miss. ${MAX_ROUND_POINTS * 3} total.`
                     : "The model reads your photo once and writes a verdict scored out of 100, from fixed templates. It only talks about objects it actually found."}
                 </p>
                 <p className="w-small">

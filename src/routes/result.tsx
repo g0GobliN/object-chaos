@@ -15,7 +15,7 @@ export const Route = createFileRoute("/result")({
     const raw = Number(search["score"]);
     return {
       mode,
-      ...(Number.isFinite(raw) ? { score: Math.max(0, Math.min(300, raw)) } : {}),
+      ...(Number.isFinite(raw) ? { score: Math.max(0, Math.min(600, raw)) } : {}),
     };
   },
   head: () =>

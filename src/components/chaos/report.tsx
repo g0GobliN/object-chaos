@@ -36,7 +36,7 @@ export function Report({
       <div className="report-score">
         <span>{score}</span>
         <div>
-          <span>/ {mode === "find" ? "300" : "100"}</span>
+          <span>/ {mode === "find" ? "600" : "100"}</span>
           <strong>{mode === "find" ? "FINAL SCORE" : "CHAOS SCORE"}</strong>
         </div>
         <Flame />

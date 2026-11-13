@@ -2,7 +2,7 @@
 // needs: a leaderboard of finished rounds in D1. Everything else is prebuilt
 // into ./dist-static (see README → Deployment) and served from env.ASSETS.
 
-const MAX_SCORE = 300;
+const MAX_SCORE = 600;
 const MAX_NAME = 16;
 const TOP_COUNT = 10;
 const MODES = new Set(["find", "roast"]);
@@ -117,8 +117,9 @@ async function leaderboard(request, env) {
   const mode = typeof body?.mode === "string" ? body.mode : "find";
   if (!MODES.has(mode)) return json({ error: "Unknown mode" }, 400);
 
+  // Rounds pay 150, or 200 for a quick answer, so every real total is a multiple of 50.
   const score = Number(body?.score);
-  if (!Number.isInteger(score) || score < 0 || score > MAX_SCORE) {
+  if (!Number.isInteger(score) || score < 0 || score > MAX_SCORE || score % 50 !== 0) {
     return json({ error: "That score is not a real round" }, 400);
   }
 

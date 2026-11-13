@@ -11,6 +11,8 @@ type DeskViewerProps = {
   selected?: string | undefined;
   onSelect?: (id: string) => void;
   interactive?: boolean;
+  /** Objects to nudge when the clock is running out. */
+  hintIds?: string[] | undefined;
   compact?: boolean;
   inferenceMs?: number | undefined;
   caption?: string;
@@ -22,6 +24,7 @@ export function DeskViewer({
   selected,
   onSelect,
   interactive = false,
+  hintIds,
   compact = false,
   inferenceMs,
   caption,
@@ -65,7 +68,7 @@ export function DeskViewer({
             disabled={!interactive}
             className={`detection-box box-${TONES[index % TONES.length]} ${
               selected === object.id ? "selected" : ""
-            }`}
+            } ${hintIds?.includes(object.id) ? "is-hint" : ""}`}
             style={{
               left: `${object.box.x * 100}%`,
               top: `${object.box.y * 100}%`,
