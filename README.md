@@ -1,11 +1,11 @@
 # OBJECT CHAOS
 
-**Your world. Your objects. Your chaos.**
+**Your world. Your objects. Your chaos. (MADE FOR FUN)**
 
-Upload a photo. A 21.6 MB vision model runs **on your device**, finds the objects in it, and a party game breaks out. No account, no upload, no inference bill.
+> **A small project made for fun.** Object Chaos was an experiment to see what could happen when on-device AI meets a party game. It was never meant to be a serious product. I'm now focused on other projects, so this one is no longer actively developed. Feel free to try it, explore the code, or just have some fun with it.
 
-- **Live:** https://objectchaos.freebuff.page
-- **Repo:** https://github.com/g0GobliN/object-chaos
+**Live:** https://objectchaos.freebuff.page  
+**Repo:** https://github.com/g0GobliN/object-chaos
 
 ## What it does
 
